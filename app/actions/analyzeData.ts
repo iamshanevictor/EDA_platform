@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 
 interface AnalysisResult {
-  summary_stats: Record<string, any>;
+  summary_stats: Record<string, Record<string, number | string | { value: string; count: number }[]>>;
   missing_values: Record<string, number>;
   column_types: Record<string, string>;
   correlation_matrix: Record<string, Record<string, number>>;
@@ -15,7 +15,7 @@ export async function analyzeData(datasetId: number, csvData: Record<string, unk
   }
 
   const columns = Object.keys(csvData[0]);
-  const summaryStats: Record<string, any> = {};
+  const summaryStats: Record<string, Record<string, number | string | { value: string; count: number }[]>> = {};
   const missingValues: Record<string, number> = {};
   const columnTypes: Record<string, string> = {};
   const correlationMatrix: Record<string, Record<string, number>> = {};

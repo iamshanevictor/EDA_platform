@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 
 interface SimpleBarChartProps {
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   width?: number;
   height?: number;
   maxBars?: number;
@@ -25,7 +25,7 @@ export function SimpleBarChart({
     
     // Filter out non-numeric values and limit to maxBars
     const numericEntries = entries
-      .filter(([key, value]) => {
+      .filter(([, value]) => {
         const numValue = Number(value);
         return !isNaN(numValue) && isFinite(numValue);
       })
@@ -70,7 +70,6 @@ export function SimpleBarChart({
   }
 
   const barWidth = Math.max((width - 40) / chartData.length - 4, 20);
-  const maxBarHeight = height - 40;
 
   return (
     <div className="w-full">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SimpleBarChart } from '@/components/SimpleBarChart';
 import { AnalysisResults } from '@/components/AnalysisResults';
+import { AdvancedCharts } from '@/components/AdvancedCharts';
 
 interface Dataset {
   id: number;
@@ -14,7 +15,7 @@ interface Dataset {
 }
 
 interface Analysis {
-  summary_stats: Record<string, unknown>;
+  summary_stats: Record<string, Record<string, number | string | { value: string; count: number }[]>>;
   missing_values: Record<string, number>;
   column_types: Record<string, string>;
   correlation_matrix: Record<string, Record<string, number>>;
@@ -153,15 +154,15 @@ function DatasetContent({ dataset }: { dataset: DatasetWithAnalysis }) {
         </CardHeader>
       </Card>
 
-      {/* EDA Analysis Results */}
+      {/* Detailed Analysis Results - Now at the top */}
       {dataset.analysis ? (
-        <AnalysisResults analysis={dataset.analysis} />
+        <AnalysisResults analysis={dataset.analysis} datasetData={dataset.data} />
       ) : (
         <Card>
           <CardContent className="p-4">
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                No analysis available for this dataset. Re-upload the file to generate analysis.
+                No analysis available for this dataset. Re-upload the file to generate analysis and visualizations.
               </p>
             </div>
           </CardContent>
@@ -183,6 +184,11 @@ function DatasetContent({ dataset }: { dataset: DatasetWithAnalysis }) {
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* Advanced Charts - Now after the detailed analysis */}
+      {dataset.analysis && (
+        <AdvancedCharts data={dataset.data} analysis={dataset.analysis} />
       )}
       
       {/* Raw Data Preview */}

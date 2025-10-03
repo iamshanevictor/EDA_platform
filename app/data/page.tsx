@@ -12,7 +12,7 @@ interface Dataset {
 }
 
 interface Analysis {
-  summary_stats: Record<string, unknown>;
+  summary_stats: Record<string, Record<string, number | string | { value: string; count: number }[]>>;
   missing_values: Record<string, number>;
   column_types: Record<string, string>;
   correlation_matrix: Record<string, Record<string, number>>;
