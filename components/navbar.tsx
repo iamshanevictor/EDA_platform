@@ -9,8 +9,8 @@ export function Navbar() {
 
   const navItems = [
     { href: '/', label: 'Home' },
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/data', label: 'Data Viewer' },
+    { href: '/upload', label: 'Upload CSV' },
+    { href: '/data', label: 'Data Analysis' },
   ];
 
   return (

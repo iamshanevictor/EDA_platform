@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { analyzeData, saveAnalysis } from '@/app/actions/analyzeData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function DashboardPage() {
+export default function UploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -80,7 +80,7 @@ export default function DashboardPage() {
               setUploadStatus('Analysis completed successfully!');
               
               // Show success message
-              alert('File uploaded and analyzed successfully! Check the Data Viewer to see the analysis results.');
+              alert('File uploaded and analyzed successfully! Check the Data Analysis page to see the results.');
               
               // Reset form
               setSelectedFile(null);
@@ -124,7 +124,7 @@ export default function DashboardPage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Dashboard
+          Upload CSV
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Upload and analyze your CSV files with automated EDA
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>5. View results in Data Viewer</span>
+                  <span>5. View results in Data Analysis</span>
                 </div>
               </div>
             </div>

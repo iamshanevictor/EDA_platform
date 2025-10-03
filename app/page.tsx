@@ -16,13 +16,13 @@ export default function HomePage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg">
-            <Link href="/dashboard">
+            <Link href="/upload">
               Upload CSV Files
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg">
             <Link href="/data">
-              View Data
+              View Data Analysis
             </Link>
           </Button>
         </div>
@@ -49,15 +49,15 @@ export default function HomePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              🔍 Data Analysis
+              📈 EDA Analysis
             </CardTitle>
             <CardDescription>
-              View and analyze your uploaded datasets
+              Comprehensive exploratory data analysis with visualizations
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Browse through your data with a clean, organized interface and raw JSON viewing.
+              Get detailed statistics, correlation matrices, histograms, scatter plots, and data quality insights.
             </p>
           </CardContent>
         </Card>
