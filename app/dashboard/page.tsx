@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const [isUploading, setIsUploading] = useState(false);
   const supabase = createClient();
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'text/csv') {
       setSelectedFile(file);
@@ -22,41 +22,9 @@ export default function DashboardPage() {
       alert('Please select a CSV file');
       setSelectedFile(null);
     }
-  };
+  }, []);
 
-  const testTableAccess = async () => {
-    try {
-      console.log('Testing table access...');
-      console.log('Supabase client:', supabase);
-      
-      const { data, error } = await supabase
-        .from('datasets')
-        .select('*')
-        .limit(1);
-      
-      console.log('Query result - data:', data);
-      console.log('Query result - error:', error);
-      
-      if (error) {
-        console.error('Table access test failed:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        alert(`Table access test failed: ${error.message || 'Unknown error'}\nCode: ${error.code || 'N/A'}\nDetails: ${error.details || 'N/A'}`);
-      } else {
-        console.log('Table access test successful:', data);
-        alert(`Table access test successful! Found ${data?.length || 0} records.`);
-      }
-    } catch (err) {
-      console.error('Table access test error:', err);
-      alert(`Table access test error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    }
-  };
-
-  const handleFileUpload = async () => {
+  const handleFileUpload = useCallback(async () => {
     if (!selectedFile) {
       alert('Please select a file first');
       return;
@@ -65,9 +33,11 @@ export default function DashboardPage() {
     setIsUploading(true);
 
     try {
-      // Parse CSV file using PapaParse
+      // Parse CSV file using PapaParse with optimized settings
       Papa.parse(selectedFile, {
-        header: true, // Use first row as header
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
         complete: async (results) => {
           try {
             console.log('Parsed CSV data:', results.data);
@@ -113,7 +83,7 @@ export default function DashboardPage() {
       alert('Error uploading file');
       setIsUploading(false);
     }
-  };
+  }, [selectedFile, supabase]);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -132,25 +102,6 @@ export default function DashboardPage() {
           <CardDescription>
             Select a CSV file to upload and process
           </CardDescription>
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={testTableAccess}
-              className="w-fit bg-gray-600 hover:bg-gray-700 text-white font-medium py-1 px-3 rounded-md transition-colors duration-200 text-sm"
-            >
-              Test Table Access
-            </button>
-            <button
-              onClick={() => {
-                console.log('Environment check:');
-                console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set');
-                console.log('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY ? 'Set' : 'Not set');
-                alert('Check console for environment variables status');
-              }}
-              className="w-fit bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded-md transition-colors duration-200 text-sm"
-            >
-              Check Env Vars
-            </button>
-          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
