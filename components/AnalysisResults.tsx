@@ -220,54 +220,6 @@ export function AnalysisResults({ analysis, datasetData }: AnalysisResultsProps)
         </Card>
       )}
 
-      {/* Correlation Matrix - Compact */}
-      {numericColumns.length > 1 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Correlation Matrix</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr>
-                    <th className="text-left p-1 border-b text-xs">Column</th>
-                    {numericColumns.map(col => (
-                      <th key={col} className="text-center p-1 border-b min-w-[60px] text-xs">
-                        {col.length > 6 ? col.substring(0, 6) + '...' : col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {numericColumns.map(rowCol => (
-                    <tr key={rowCol}>
-                      <td className="p-1 border-b font-medium text-xs">
-                        {rowCol.length > 10 ? rowCol.substring(0, 10) + '...' : rowCol}
-                      </td>
-                      {numericColumns.map(colCol => {
-                        const correlation = correlation_matrix[rowCol]?.[colCol] || 0;
-                        const intensity = Math.abs(correlation);
-                        const colorClass = intensity > 0.7 
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                          : intensity > 0.3 
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
-                        
-                        return (
-                          <td key={colCol} className={`text-center p-1 border-b ${colorClass}`}>
-                            {correlation.toFixed(2)}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

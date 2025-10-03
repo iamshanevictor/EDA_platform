@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HistogramChart } from './charts/HistogramChart';
 import { ScatterPlot } from './charts/ScatterPlot';
+import { CorrelationHeatmap } from './charts/CorrelationHeatmap';
 import { MissingValuesChart } from './charts/MissingValuesChart';
-import { BarChart2, ScatterChart as ScatterIcon, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { BarChart2, ScatterChart as ScatterIcon, Grid, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 
 interface AdvancedChartsProps {
   data: Record<string, unknown>[];
@@ -23,6 +24,7 @@ export function AdvancedCharts({ data, analysis }: AdvancedChartsProps) {
   const [visibleCharts, setVisibleCharts] = useState({
     histogram: true,
     scatter: true,
+    correlation: true,
     missing: true
   });
 
@@ -47,6 +49,7 @@ export function AdvancedCharts({ data, analysis }: AdvancedChartsProps) {
   const chartButtons = [
     { key: 'histogram', label: 'Histograms', icon: BarChart2, color: 'blue' },
     { key: 'scatter', label: 'Scatter Plots', icon: ScatterIcon, color: 'green' },
+    { key: 'correlation', label: 'Correlation', icon: Grid, color: 'purple' },
     { key: 'missing', label: 'Missing Values', icon: AlertTriangle, color: 'red' }
   ] as const;
 
@@ -235,8 +238,32 @@ export function AdvancedCharts({ data, analysis }: AdvancedChartsProps) {
 
         </div>
 
-        {/* Data Quality Analysis - 1 Column Layout */}
+        {/* Correlation Matrix and Data Quality Analysis - 1 Column Layout */}
         <div className="space-y-4">
+          {/* Correlation Heatmap */}
+          {visibleCharts.correlation && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Grid className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Correlation Matrix
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {numericColumns.length > 1 ? (
+                  <CorrelationHeatmap 
+                    correlationMatrix={analysis.correlation_matrix} 
+                    numericColumns={numericColumns}
+                  />
+                ) : (
+                  <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
+                    Need at least 2 numeric columns for correlation analysis
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Missing Values Chart */}
           {visibleCharts.missing && (
             <Card>
@@ -273,6 +300,7 @@ export function AdvancedCharts({ data, analysis }: AdvancedChartsProps) {
               onClick={() => setVisibleCharts({
                 histogram: true,
                 scatter: true,
+                correlation: true,
                 missing: true
               })}
             >

@@ -9,7 +9,26 @@ interface AnalysisResult {
   correlation_matrix: Record<string, Record<string, number>>;
 }
 
-export async function analyzeData(datasetId: number, csvData: Record<string, unknown>[]): Promise<AnalysisResult> {
+export async function analyzeData(datasetId: number): Promise<AnalysisResult> {
+  const supabase = await createClient();
+  
+  // Fetch the dataset data from the database
+  const { data: dataset, error } = await supabase
+    .from('datasets')
+    .select('data')
+    .eq('id', datasetId)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch dataset: ${error.message}`);
+  }
+
+  if (!dataset || !dataset.data) {
+    throw new Error('No data found for this dataset');
+  }
+
+  const csvData = dataset.data as Record<string, unknown>[];
+  
   if (!csvData || csvData.length === 0) {
     throw new Error('No data provided for analysis');
   }

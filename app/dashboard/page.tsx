@@ -73,7 +73,7 @@ export default function DashboardPage() {
 
             // Run EDA analysis
             try {
-              const analysis = await analyzeData(insertData.id, results.data as Record<string, unknown>[]);
+              const analysis = await analyzeData(insertData.id);
               await saveAnalysis(insertData.id, analysis);
               
               console.log('Analysis completed:', analysis);
