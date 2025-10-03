@@ -51,7 +51,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/" &&
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/dashboard")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
@@ -69,8 +70,8 @@ export async function updateSession(request: NextRequest) {
   //    the cookies!
   // 4. Finally:
   //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
+  // If this is not done, you may be causing the browser and server to terminate
+  // the user's session prematurely!
 
   return supabaseResponse;
 }
