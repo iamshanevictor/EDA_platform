@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SimpleBarChart } from '@/components/SimpleBarChart';
-import { Suspense } from 'react';
+import { DatasetTabs } from '@/components/DatasetTabs';
+import { getAnalysis } from '@/app/actions/analyzeData';
 
 interface Dataset {
   id: number;
@@ -11,106 +11,15 @@ interface Dataset {
   data: Record<string, unknown>[];
 }
 
-// Loading component for individual dataset
-function DatasetSkeleton() {
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+interface Analysis {
+  summary_stats: Record<string, unknown>;
+  missing_values: Record<string, number>;
+  column_types: Record<string, string>;
+  correlation_matrix: Record<string, Record<string, number>>;
 }
 
-// Optimized dataset component
-function DatasetCard({ dataset }: { dataset: Dataset }) {
-  const dataPreview = Array.isArray(dataset.data) 
-    ? dataset.data.slice(0, 3) // Show only first 3 records for preview
-    : dataset.data;
-
-  // Get the first row for visualization
-  const firstRowData = Array.isArray(dataset.data) && dataset.data.length > 0 
-    ? dataset.data[0] 
-    : null;
-
-  return (
-    <Card key={dataset.id} className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="truncate">{dataset.file_name}</span>
-          <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-            ID: {dataset.id}
-          </span>
-        </CardTitle>
-        <CardDescription>
-          Uploaded: {new Date(dataset.created_at).toLocaleString()} | 
-          Size: {(dataset.file_size / 1024).toFixed(2)} KB
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              File Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="font-medium">File Name:</span>
-                <p className="text-gray-600 dark:text-gray-400 truncate">{dataset.file_name}</p>
-              </div>
-              <div>
-                <span className="font-medium">File Size:</span>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {(dataset.file_size / 1024).toFixed(2)} KB
-                </p>
-              </div>
-              <div>
-                <span className="font-medium">Records:</span>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {Array.isArray(dataset.data) ? dataset.data.length : 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Data Visualization */}
-          {firstRowData && (
-            <div>
-              <SimpleBarChart 
-                data={firstRowData} 
-                width={400} 
-                height={200} 
-                maxBars={6}
-              />
-            </div>
-          )}
-          
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Data Preview (First 3 records)
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 overflow-auto max-h-64">
-              <pre className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                {JSON.stringify(dataPreview, null, 2)}
-              </pre>
-            </div>
-            {Array.isArray(dataset.data) && dataset.data.length > 3 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Showing 3 of {dataset.data.length} records. Full data available in database.
-              </p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+interface DatasetWithAnalysis extends Dataset {
+  analysis?: Analysis | null;
 }
 
 export default async function DataPage() {
@@ -128,10 +37,10 @@ export default async function DataPage() {
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Data Viewer
+            Data Viewer & EDA Analysis
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            View uploaded CSV datasets
+            View uploaded CSV datasets with automated EDA analysis
           </p>
         </div>
         
@@ -154,46 +63,31 @@ export default async function DataPage() {
     );
   }
 
+  // Fetch analysis data for each dataset
+  const datasetsWithAnalysis: DatasetWithAnalysis[] = await Promise.all(
+    (datasets || []).map(async (dataset) => {
+      try {
+        const analysis = await getAnalysis(dataset.id);
+        return { ...dataset, analysis };
+      } catch (error) {
+        console.error(`Error fetching analysis for dataset ${dataset.id}:`, error);
+        return { ...dataset, analysis: null };
+      }
+    })
+  );
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Data Viewer
+          Data Viewer & EDA Analysis
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          View uploaded CSV datasets ({datasets?.length || 0} records)
+          View uploaded CSV datasets with automated EDA analysis ({datasetsWithAnalysis.length} datasets)
         </p>
       </div>
 
-      {!datasets || datasets.length === 0 ? (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>No Data Available</CardTitle>
-            <CardDescription>
-              No datasets have been uploaded yet
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 dark:text-gray-400">
-              Upload some CSV files from the dashboard to see them here.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Suspense fallback={
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <DatasetSkeleton key={i} />
-            ))}
-          </div>
-        }>
-          <div className="space-y-6">
-            {datasets.map((dataset) => (
-              <DatasetCard key={dataset.id} dataset={dataset} />
-            ))}
-          </div>
-        </Suspense>
-      )}
+      <DatasetTabs datasets={datasetsWithAnalysis} />
     </div>
   );
 }
