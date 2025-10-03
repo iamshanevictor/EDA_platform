@@ -69,68 +69,71 @@ export function MissingValuesChart({ missingValues, totalRecords }: MissingValue
         </div>
       </div>
 
-      {/* Pie Chart - Overall Missing vs Present */}
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-          Overall Data Completeness
-        </h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData.pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {chartData.pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value: number) => [value.toLocaleString(), 'Count']}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+      {/* Side-by-side Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Pie Chart - Overall Missing vs Present */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Overall Data Completeness
+          </h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData.pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {chartData.pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: number) => [value.toLocaleString(), 'Count']}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
 
-      {/* Bar Chart - Missing Values by Column */}
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-          Missing Values by Column
-        </h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData.barData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="column" 
-                angle={-45}
-                textAnchor="end"
-                height={80}
-                fontSize={12}
-              />
-              <YAxis />
-              <Tooltip 
-                formatter={(value: number, name: string) => [
-                  name === 'missing' ? `${value} (${((value / totalRecords) * 100).toFixed(1)}%)` : value,
-                  name === 'missing' ? 'Missing' : 'Present'
-                ]}
-                labelFormatter={(label, payload) => {
-                  if (payload && payload[0]) {
-                    return `Column: ${payload[0].payload.fullColumn}`;
-                  }
-                  return label;
-                }}
-              />
-              <Bar dataKey="present" stackId="a" fill="#10b981" name="present" />
-              <Bar dataKey="missing" stackId="a" fill="#ef4444" name="missing" />
-            </BarChart>
-          </ResponsiveContainer>
+        {/* Bar Chart - Missing Values by Column */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Missing Values by Column
+          </h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData.barData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="column" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  fontSize={12}
+                />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number, name: string) => [
+                    name === 'missing' ? `${value} (${((value / totalRecords) * 100).toFixed(1)}%)` : value,
+                    name === 'missing' ? 'Missing' : 'Present'
+                  ]}
+                  labelFormatter={(label, payload) => {
+                    if (payload && payload[0]) {
+                      return `Column: ${payload[0].payload.fullColumn}`;
+                    }
+                    return label;
+                  }}
+                />
+                <Bar dataKey="present" stackId="a" fill="#10b981" name="present" />
+                <Bar dataKey="missing" stackId="a" fill="#ef4444" name="missing" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 

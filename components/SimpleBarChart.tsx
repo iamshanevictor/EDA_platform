@@ -69,7 +69,7 @@ export function SimpleBarChart({
     );
   }
 
-  const barWidth = Math.max((width - 40) / chartData.length - 4, 20);
+  const barWidth = Math.max((width - 60) / chartData.length - 2, 15);
 
   return (
     <div className="w-full">
@@ -82,7 +82,7 @@ export function SimpleBarChart({
         </p>
       </div>
       
-      <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4">
+      <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-3">
         <svg width={width} height={height} className="w-full h-auto">
           {/* Background */}
           <rect
@@ -94,8 +94,8 @@ export function SimpleBarChart({
           
           {/* Bars */}
           {chartData.map((item, index) => {
-            const x = 20 + index * (barWidth + 4);
-            const y = height - 20 - item.barHeight;
+            const x = 30 + index * (barWidth + 2);
+            const y = height - 30 - item.barHeight;
             
             return (
               <g key={item.key}>
@@ -123,10 +123,10 @@ export function SimpleBarChart({
                 {/* Key label at bottom */}
                 <text
                   x={x + barWidth / 2}
-                  y={height - 5}
+                  y={height - 10}
                   textAnchor="middle"
                   className="text-xs fill-gray-600 dark:fill-gray-400"
-                  transform={`rotate(-45, ${x + barWidth / 2}, ${height - 5})`}
+                  transform={`rotate(-45, ${x + barWidth / 2}, ${height - 10})`}
                 >
                   {item.key}
                 </text>
@@ -136,10 +136,10 @@ export function SimpleBarChart({
           
           {/* Y-axis line */}
           <line
-            x1="15"
-            y1="20"
-            x2="15"
-            y2={height - 20}
+            x1="25"
+            y1="10"
+            x2="25"
+            y2={height - 30}
             stroke="currentColor"
             strokeWidth="1"
             className="text-gray-400 dark:text-gray-500"
@@ -147,10 +147,10 @@ export function SimpleBarChart({
           
           {/* X-axis line */}
           <line
-            x1="15"
-            y1={height - 20}
-            x2={width - 5}
-            y2={height - 20}
+            x1="25"
+            y1={height - 30}
+            x2={width - 10}
+            y2={height - 30}
             stroke="currentColor"
             strokeWidth="1"
             className="text-gray-400 dark:text-gray-500"
@@ -158,7 +158,7 @@ export function SimpleBarChart({
         </svg>
         
         {/* Legend */}
-        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
           <p>Showing {chartData.length} numeric fields from the first data record</p>
         </div>
       </div>

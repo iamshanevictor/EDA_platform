@@ -71,8 +71,8 @@ export function CorrelationHeatmap({ correlationMatrix, numericColumns }: Correl
       </div>
 
       {/* Heatmap Grid */}
-      <div className="overflow-x-auto">
-        <div className="inline-block min-w-full">
+      <div className="w-full">
+        <div className="w-full">
           {/* Header row with column names */}
           <div className="flex">
             <div className="w-24 h-8 flex items-center justify-center text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -81,10 +81,10 @@ export function CorrelationHeatmap({ correlationMatrix, numericColumns }: Correl
             {numericColumns.map((col) => (
               <div 
                 key={col} 
-                className="w-20 h-8 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300 transform -rotate-45 origin-center"
-                style={{ writingMode: 'vertical-rl' }}
+                className="flex-1 min-w-24 h-12 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300"
+                title={col}
               >
-                {col.length > 8 ? col.substring(0, 8) + '...' : col}
+                <span className="truncate max-w-full">{col}</span>
               </div>
             ))}
           </div>
@@ -93,8 +93,8 @@ export function CorrelationHeatmap({ correlationMatrix, numericColumns }: Correl
           {numericColumns.map((rowCol, rowIndex) => (
             <div key={rowCol} className="flex">
               {/* Row label */}
-              <div className="w-24 h-8 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
-                {rowCol.length > 10 ? rowCol.substring(0, 10) + '...' : rowCol}
+              <div className="w-24 h-8 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300" title={rowCol}>
+                <span className="truncate max-w-full">{rowCol}</span>
               </div>
               
               {/* Correlation values */}
@@ -105,7 +105,7 @@ export function CorrelationHeatmap({ correlationMatrix, numericColumns }: Correl
                 return (
                   <div
                     key={`${rowCol}-${colCol}`}
-                    className={`w-20 h-8 flex items-center justify-center text-xs font-medium border border-gray-200 dark:border-gray-700 ${
+                    className={`flex-1 min-w-24 h-8 flex items-center justify-center text-xs font-medium border border-gray-200 dark:border-gray-700 ${
                       isDiagonal 
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200' 
                         : `${getColorIntensity(correlation)} ${getTextColor(correlation)}`

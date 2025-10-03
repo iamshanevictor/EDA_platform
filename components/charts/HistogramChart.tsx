@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface HistogramChartProps {
   data: Record<string, unknown>[];
@@ -99,15 +99,19 @@ export function HistogramChart({ data, numericColumns, maxColumns = 4 }: Histogr
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={histogram} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="range" 
                   angle={-45}
                   textAnchor="end"
                   height={80}
                   fontSize={12}
+                  axisLine={false}
+                  tickLine={false}
                 />
-                <YAxis />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip 
                   formatter={(value: number) => [value, 'Count']}
                   labelFormatter={(label) => `Range: ${label}`}

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SimpleBarChart } from '@/components/SimpleBarChart';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { AdvancedCharts } from '@/components/AdvancedCharts';
 
@@ -124,9 +123,6 @@ function DatasetContent({ dataset }: { dataset: DatasetWithAnalysis }) {
     ? dataset.data.slice(0, 3)
     : dataset.data;
 
-  const firstRowData = Array.isArray(dataset.data) && dataset.data.length > 0 
-    ? dataset.data[0] 
-    : null;
 
   return (
     <div className="space-y-4">
@@ -169,22 +165,6 @@ function DatasetContent({ dataset }: { dataset: DatasetWithAnalysis }) {
         </Card>
       )}
 
-      {/* Data Visualization */}
-      {firstRowData && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Data Preview Visualization</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SimpleBarChart 
-              data={firstRowData} 
-              width={400} 
-              height={200} 
-              maxBars={6}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Advanced Charts - Now after the detailed analysis */}
       {dataset.analysis && (
