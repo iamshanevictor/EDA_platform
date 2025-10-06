@@ -32,7 +32,7 @@ interface AnalysisResultsProps {
 }
 
 export function AnalysisResults({ analysis, datasetData }: AnalysisResultsProps) {
-  const { summary_stats, missing_values, column_types, correlation_matrix } = analysis;
+  const { summary_stats, missing_values, column_types } = analysis;
 
   const numericColumns = Object.entries(column_types)
     .filter(([, type]) => type === 'numeric')

@@ -2,8 +2,13 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { AdvancedCharts } from '@/components/AdvancedCharts';
+import { ReportGenerator } from '@/components/ReportGenerator';
+import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
+import { deleteDataset } from '@/app/actions/deleteDataset';
+import { Trash2 } from 'lucide-react';
 
 interface Dataset {
   id: number;
@@ -32,8 +37,53 @@ export function DatasetTabs({ datasets }: DatasetTabsProps) {
   const [activeDatasetId, setActiveDatasetId] = useState<number | null>(
     datasets.length > 0 ? datasets[0].id : null
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [datasetToDelete, setDatasetToDelete] = useState<DatasetWithAnalysis | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const activeDataset = datasets.find(dataset => dataset.id === activeDatasetId);
+
+  const handleDeleteClick = (dataset: DatasetWithAnalysis, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the dataset selection
+    setDatasetToDelete(dataset);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!datasetToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteDataset(datasetToDelete.id);
+      
+      if (result.success) {
+        // If the deleted dataset was active, switch to another dataset
+        if (activeDatasetId === datasetToDelete.id) {
+          const remainingDatasets = datasets.filter(d => d.id !== datasetToDelete.id);
+          setActiveDatasetId(remainingDatasets.length > 0 ? remainingDatasets[0].id : null);
+        }
+        
+        // Close dialog and reset state
+        setDeleteDialogOpen(false);
+        setDatasetToDelete(null);
+        
+        // Show success message (you could add a toast notification here)
+        alert('Dataset deleted successfully!');
+      } else {
+        alert(`Failed to delete dataset: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('An error occurred while deleting the dataset');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDatasetToDelete(null);
+  };
 
   if (datasets.length === 0) {
     return (
@@ -67,42 +117,58 @@ export function DatasetTabs({ datasets }: DatasetTabsProps) {
               const recordCount = Array.isArray(dataset.data) ? dataset.data.length : 0;
               
               return (
-                <button
+                <div
                   key={dataset.id}
-                  onClick={() => setActiveDatasetId(dataset.id)}
-                  className={`p-3 rounded-lg border-2 transition-all duration-200 text-left ${
+                  className={`relative p-3 rounded-lg border-2 transition-all duration-200 ${
                     isActive
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
                       : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
                   }`}
                 >
-                  <div className="space-y-2">
-                    {/* Dataset Icon/Preview */}
-                    <div className={`w-full h-12 rounded flex items-center justify-center text-2xl ${
-                      isActive 
-                        ? 'bg-blue-100 dark:bg-blue-800/30 text-blue-600 dark:text-blue-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                    }`}>
-                      📊
-                    </div>
-                    
-                    {/* Dataset Info */}
-                    <div className="space-y-1">
-                      <h3 className={`font-medium text-sm truncate ${
+                  {/* Delete Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleDeleteClick(dataset, e)}
+                    className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity duration-200 z-10"
+                    title="Delete dataset"
+                  >
+                    <Trash2 className="h-3 w-3 text-red-500 hover:text-red-700" />
+                  </Button>
+                  
+                  {/* Dataset Card Content */}
+                  <button
+                    onClick={() => setActiveDatasetId(dataset.id)}
+                    className="w-full text-left group"
+                  >
+                    <div className="space-y-2">
+                      {/* Dataset Icon/Preview */}
+                      <div className={`w-full h-12 rounded flex items-center justify-center text-2xl ${
                         isActive 
-                          ? 'text-blue-900 dark:text-blue-100'
-                          : 'text-gray-900 dark:text-gray-100'
-                      }`} title={dataset.file_name}>
-                        {dataset.file_name}
-                      </h3>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        <div>{recordCount} records</div>
-                        <div>{(dataset.file_size / 1024).toFixed(1)} KB</div>
-                        <div>{new Date(dataset.created_at).toLocaleDateString()}</div>
+                          ? 'bg-blue-100 dark:bg-blue-800/30 text-blue-600 dark:text-blue-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      }`}>
+                        📊
+                      </div>
+                      
+                      {/* Dataset Info */}
+                      <div className="space-y-1">
+                        <h3 className={`font-medium text-sm truncate ${
+                          isActive 
+                            ? 'text-blue-900 dark:text-blue-100'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`} title={dataset.file_name}>
+                          {dataset.file_name}
+                        </h3>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div>{recordCount} records</div>
+                          <div>{(dataset.file_size / 1024).toFixed(1)} KB</div>
+                          <div>{new Date(dataset.created_at).toLocaleDateString()}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -113,6 +179,15 @@ export function DatasetTabs({ datasets }: DatasetTabsProps) {
       {activeDataset && (
         <DatasetContent dataset={activeDataset} />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        datasetName={datasetToDelete?.file_name || ''}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
@@ -169,6 +244,14 @@ function DatasetContent({ dataset }: { dataset: DatasetWithAnalysis }) {
       {/* Advanced Charts - Now after the detailed analysis */}
       {dataset.analysis && (
         <AdvancedCharts data={dataset.data} analysis={dataset.analysis} />
+      )}
+
+      {/* Report Generator */}
+      {dataset.analysis && (
+        <ReportGenerator 
+          datasetId={dataset.id} 
+          datasetName={dataset.file_name} 
+        />
       )}
       
       {/* Raw Data Preview */}

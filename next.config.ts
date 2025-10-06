@@ -6,10 +6,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   
-  // Configure server actions body size limit
-  serverActions: {
-    bodySizeLimit: '1000mb', // Increase from default 1mb to 10mb
-  },
   
   // Optimize images
   images: {
