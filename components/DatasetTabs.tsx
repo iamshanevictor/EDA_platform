@@ -7,6 +7,7 @@ import { AnalysisResults } from '@/components/AnalysisResults';
 import { AdvancedCharts } from '@/components/AdvancedCharts';
 import { ReportGenerator } from '@/components/ReportGenerator';
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
+import { DataChatbot } from '@/components/DataChatbot';
 import { deleteDataset } from '@/app/actions/deleteDataset';
 import { Trash2 } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export function DatasetTabs({ datasets }: DatasetTabsProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [datasetToDelete, setDatasetToDelete] = useState<DatasetWithAnalysis | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const activeDataset = datasets.find(dataset => dataset.id === activeDatasetId);
 
@@ -188,6 +190,15 @@ export function DatasetTabs({ datasets }: DatasetTabsProps) {
         datasetName={datasetToDelete?.file_name || ''}
         isDeleting={isDeleting}
       />
+
+      {/* Data Chatbot */}
+      {activeDatasetId && (
+        <DataChatbot
+          datasetId={activeDatasetId}
+          isOpen={chatbotOpen}
+          onToggle={() => setChatbotOpen(!chatbotOpen)}
+        />
+      )}
     </div>
   );
 }
