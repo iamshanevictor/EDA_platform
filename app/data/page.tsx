@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DatasetTabs } from '@/components/DatasetTabs';
+import { OptimizedDatasetTabs } from '@/components/OptimizedDatasetTabs';
 import { getAnalysis } from '@/app/actions/analyzeData';
 
 interface Dataset {
@@ -8,7 +8,7 @@ interface Dataset {
   file_name: string;
   file_size: number;
   created_at: string;
-  data: Record<string, unknown>[];
+  data?: Record<string, unknown>[]; // Make data optional for metadata-only queries
 }
 
 interface Analysis {
@@ -25,10 +25,10 @@ interface DatasetWithAnalysis extends Dataset {
 export default async function DataPage() {
   const supabase = await createClient();
   
-  // Fetch all records from the datasets table with limit for performance
+  // Fetch only metadata from datasets table (without the actual data)
   const { data: datasets, error } = await supabase
     .from('datasets')
-    .select('id, file_name, file_size, created_at, data')
+    .select('id, file_name, file_size, created_at')
     .order('created_at', { ascending: false })
     .limit(50); // Limit to 50 most recent records for performance
 
@@ -63,7 +63,7 @@ export default async function DataPage() {
     );
   }
 
-  // Fetch analysis data for each dataset
+  // Fetch analysis data for each dataset (optimized with parallel processing)
   const datasetsWithAnalysis: DatasetWithAnalysis[] = await Promise.all(
     (datasets || []).map(async (dataset) => {
       try {
@@ -87,7 +87,7 @@ export default async function DataPage() {
         </p>
       </div>
 
-      <DatasetTabs datasets={datasetsWithAnalysis} />
+      <OptimizedDatasetTabs datasets={datasetsWithAnalysis} />
     </div>
   );
 }

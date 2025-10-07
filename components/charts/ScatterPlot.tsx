@@ -20,16 +20,22 @@ export function ScatterPlot({ data, numericColumns, maxPlots = 6, singlePlot }: 
     }
 
     const plots = [];
+    
+    // Performance optimization: Sample data for large datasets
+    const maxDataPoints = 2000; // Limit data points for performance
+    const sampledData = data.length > maxDataPoints 
+      ? data.filter((_, index) => index % Math.ceil(data.length / maxDataPoints) === 0)
+      : data;
 
     // If singlePlot is specified, generate only that plot
     if (singlePlot) {
       const { xColumn, yColumn } = singlePlot;
       
-      const plotData = data
+      const plotData = sampledData
         .map(row => ({
           x: Number(row[xColumn]),
           y: Number(row[yColumn]),
-          index: data.indexOf(row)
+          index: sampledData.indexOf(row)
         }))
         .filter(point => !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y));
 
@@ -57,11 +63,11 @@ export function ScatterPlot({ data, numericColumns, maxPlots = 6, singlePlot }: 
           const xColumn = columnsToUse[i];
           const yColumn = columnsToUse[j];
           
-          const plotData = data
+          const plotData = sampledData
             .map(row => ({
               x: Number(row[xColumn]),
               y: Number(row[yColumn]),
-              index: data.indexOf(row)
+              index: sampledData.indexOf(row)
             }))
             .filter(point => !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y));
 

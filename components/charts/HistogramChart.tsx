@@ -17,9 +17,15 @@ export function HistogramChart({ data, numericColumns, maxColumns = 4 }: Histogr
 
     const columnsToShow = numericColumns.slice(0, maxColumns);
     const bins = 10; // Number of bins for histogram
+    
+    // Performance optimization: Sample data for large datasets
+    const maxDataPoints = 5000; // Limit data points for histogram performance
+    const sampledData = data.length > maxDataPoints 
+      ? data.filter((_, index) => index % Math.ceil(data.length / maxDataPoints) === 0)
+      : data;
 
     return columnsToShow.map(column => {
-      const values = data
+      const values = sampledData
         .map(row => Number(row[column]))
         .filter(val => !isNaN(val) && isFinite(val));
 

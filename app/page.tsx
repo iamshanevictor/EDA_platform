@@ -94,8 +94,8 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <Button asChild className="w-full">
-                <Link href="/dashboard">
-                  Go to Dashboard
+                <Link href="/upload">
+                  Go to Upload
                 </Link>
               </Button>
             </CardContent>

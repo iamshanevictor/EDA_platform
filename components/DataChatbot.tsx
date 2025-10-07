@@ -192,20 +192,21 @@ export function DataChatbot({ datasetId, isOpen, onToggle }: DataChatbotProps) {
     return (
       <Button
         onClick={onToggle}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-blue-600 hover:bg-blue-700"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full transition-all duration-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-none"
         size="icon"
+        variant="outline"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-6 w-6 text-gray-600 dark:text-gray-400" />
       </Button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col z-50">
+    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col z-50">
       {/* Header */}
       <CardHeader className="flex flex-row items-center justify-between pb-2 border-b">
         <CardTitle className="text-lg flex items-center gap-2">
-          <Bot className="h-5 w-5 text-blue-600" />
+          <Bot className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           Data Assistant
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={onToggle} className="h-8 w-8 p-0">
@@ -221,14 +222,14 @@ export function DataChatbot({ datasetId, isOpen, onToggle }: DataChatbotProps) {
             className={`flex gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {message.role === 'assistant' && (
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                 {getMessageIcon(message.role)}
               </div>
             )}
             <div
               className={`max-w-[80%] p-3 rounded-lg ${
                 message.role === 'user'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-gray-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
               }`}
             >
