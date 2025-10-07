@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface MissingValuesChartProps {
   missingValues: Record<string, number>;
@@ -9,6 +11,8 @@ interface MissingValuesChartProps {
 }
 
 export function MissingValuesChart({ missingValues, totalRecords }: MissingValuesChartProps) {
+  const [showDetailedTable, setShowDetailedTable] = useState(false);
+  
   const chartData = useMemo(() => {
     const entries = Object.entries(missingValues);
     
@@ -137,55 +141,133 @@ export function MissingValuesChart({ missingValues, totalRecords }: MissingValue
         </div>
       </div>
 
-      {/* Detailed Table */}
+      {/* Detailed Table with Dropdown */}
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Detailed Missing Values Report
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left p-2 font-medium">Column</th>
-                <th className="text-right p-2 font-medium">Total Records</th>
-                <th className="text-right p-2 font-medium">Present</th>
-                <th className="text-right p-2 font-medium">Missing</th>
-                <th className="text-right p-2 font-medium">Missing %</th>
-                <th className="text-center p-2 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.barData.map((row) => (
-                <tr key={row.fullColumn} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="p-2 font-medium" title={row.fullColumn}>
-                    {row.fullColumn}
-                  </td>
-                  <td className="p-2 text-right">{totalRecords.toLocaleString()}</td>
-                  <td className="p-2 text-right text-green-600 dark:text-green-400">
-                    {row.present.toLocaleString()}
-                  </td>
-                  <td className="p-2 text-right text-red-600 dark:text-red-400">
-                    {row.missing.toLocaleString()}
-                  </td>
-                  <td className="p-2 text-right">
-                    {row.missingPercentage.toFixed(1)}%
-                  </td>
-                  <td className="p-2 text-center">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      row.missing === 0 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                        : row.missingPercentage < 5
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                    }`}>
-                      {row.missing === 0 ? 'Complete' : row.missingPercentage < 5 ? 'Good' : 'Needs Attention'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Detailed Missing Values Report
+          </h3>
+          {Object.keys(missingValues).length > 5 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailedTable(!showDetailedTable)}
+              className="flex items-center gap-1"
+            >
+              {showDetailedTable ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show Details
+                </>
+              )}
+            </Button>
+          )}
         </div>
+
+        {/* Summary Row */}
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="text-center">
+              <div className="font-semibold text-gray-900 dark:text-white">
+                {Object.keys(missingValues).length}
+              </div>
+              <div className="text-gray-600 dark:text-gray-400">Total Columns</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-green-600 dark:text-green-400">
+                {Object.values(missingValues).filter(count => count === 0).length}
+              </div>
+              <div className="text-gray-600 dark:text-gray-400">Complete</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-yellow-600 dark:text-yellow-400">
+                {Object.values(missingValues).filter(count => count > 0 && count < totalRecords * 0.05).length}
+              </div>
+              <div className="text-gray-600 dark:text-gray-400">Good (&lt;5%)</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-red-600 dark:text-red-400">
+                {Object.values(missingValues).filter(count => count >= totalRecords * 0.05).length}
+              </div>
+              <div className="text-gray-600 dark:text-gray-400">Needs Attention</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Table - Show by default for few columns, toggle for many */}
+        {(Object.keys(missingValues).length <= 5 || showDetailedTable) && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left p-2 font-medium">Column</th>
+                  <th className="text-right p-2 font-medium">Total Records</th>
+                  <th className="text-right p-2 font-medium">Present</th>
+                  <th className="text-right p-2 font-medium">Missing</th>
+                  <th className="text-right p-2 font-medium">Missing %</th>
+                  <th className="text-center p-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartData.barData.map((row) => (
+                  <tr key={row.fullColumn} className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="p-2 font-medium" title={row.fullColumn}>
+                      {row.fullColumn}
+                    </td>
+                    <td className="p-2 text-right">{totalRecords.toLocaleString()}</td>
+                    <td className="p-2 text-right text-green-600 dark:text-green-400">
+                      {row.present.toLocaleString()}
+                    </td>
+                    <td className="p-2 text-right text-red-600 dark:text-red-400">
+                      {row.missing.toLocaleString()}
+                    </td>
+                    <td className="p-2 text-right">
+                      {row.missingPercentage.toFixed(1)}%
+                    </td>
+                    <td className="p-2 text-center">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        row.missing === 0 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          : row.missingPercentage < 5
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                      }`}>
+                        {row.missing === 0 ? 'Complete' : row.missingPercentage < 5 ? 'Good' : 'Needs Attention'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Compact View for Many Columns */}
+        {Object.keys(missingValues).length > 5 && !showDetailedTable && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {chartData.barData.map((row) => (
+              <div key={row.fullColumn} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
+                <span className="font-medium truncate flex-1" title={row.fullColumn}>
+                  {row.fullColumn}
+                </span>
+                <span className={`px-2 py-1 rounded text-xs ml-2 flex-shrink-0 ${
+                  row.missing === 0 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                    : row.missingPercentage < 5
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                }`}>
+                  {row.missing === 0 ? 'Complete' : row.missingPercentage < 5 ? 'Good' : 'Needs Attention'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

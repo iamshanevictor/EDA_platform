@@ -7,46 +7,78 @@ interface ScatterPlotProps {
   data: Record<string, unknown>[];
   numericColumns: string[];
   maxPlots?: number;
+  singlePlot?: {
+    xColumn: string;
+    yColumn: string;
+  };
 }
 
-export function ScatterPlot({ data, numericColumns, maxPlots = 6 }: ScatterPlotProps) {
+export function ScatterPlot({ data, numericColumns, maxPlots = 6, singlePlot }: ScatterPlotProps) {
   const scatterData = useMemo(() => {
-    if (!data || data.length === 0 || numericColumns.length < 2) {
+    if (!data || data.length === 0) {
       return [];
     }
 
     const plots = [];
-    const columnsToUse = numericColumns.slice(0, Math.min(numericColumns.length, 4));
 
-    // Generate scatter plots for all pairs of numeric columns
-    for (let i = 0; i < columnsToUse.length; i++) {
-      for (let j = i + 1; j < columnsToUse.length; j++) {
-        if (plots.length >= maxPlots) break;
-        
-        const xColumn = columnsToUse[i];
-        const yColumn = columnsToUse[j];
-        
-        const plotData = data
-          .map(row => ({
-            x: Number(row[xColumn]),
-            y: Number(row[yColumn]),
-            index: data.indexOf(row)
-          }))
-          .filter(point => !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y));
+    // If singlePlot is specified, generate only that plot
+    if (singlePlot) {
+      const { xColumn, yColumn } = singlePlot;
+      
+      const plotData = data
+        .map(row => ({
+          x: Number(row[xColumn]),
+          y: Number(row[yColumn]),
+          index: data.indexOf(row)
+        }))
+        .filter(point => !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y));
 
-        if (plotData.length > 0) {
-          plots.push({
-            xColumn,
-            yColumn,
-            data: plotData,
-            correlation: calculateCorrelation(plotData.map(p => p.x), plotData.map(p => p.y))
-          });
+      if (plotData.length > 0) {
+        plots.push({
+          xColumn,
+          yColumn,
+          data: plotData,
+          correlation: calculateCorrelation(plotData.map(p => p.x), plotData.map(p => p.y))
+        });
+      }
+    } else {
+      // Original logic for multiple plots
+      if (numericColumns.length < 2) {
+        return [];
+      }
+
+      const columnsToUse = numericColumns.slice(0, Math.min(numericColumns.length, 4));
+
+      // Generate scatter plots for all pairs of numeric columns
+      for (let i = 0; i < columnsToUse.length; i++) {
+        for (let j = i + 1; j < columnsToUse.length; j++) {
+          if (plots.length >= maxPlots) break;
+          
+          const xColumn = columnsToUse[i];
+          const yColumn = columnsToUse[j];
+          
+          const plotData = data
+            .map(row => ({
+              x: Number(row[xColumn]),
+              y: Number(row[yColumn]),
+              index: data.indexOf(row)
+            }))
+            .filter(point => !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y));
+
+          if (plotData.length > 0) {
+            plots.push({
+              xColumn,
+              yColumn,
+              data: plotData,
+              correlation: calculateCorrelation(plotData.map(p => p.x), plotData.map(p => p.y))
+            });
+          }
         }
       }
     }
 
     return plots;
-  }, [data, numericColumns, maxPlots]);
+  }, [data, numericColumns, maxPlots, singlePlot]);
 
   if (scatterData.length === 0) {
     return (
@@ -112,7 +144,7 @@ export function ScatterPlot({ data, numericColumns, maxPlots = 6 }: ScatterPlotP
                     return '';
                   }}
                 />
-                <Scatter dataKey="y" fill={colors[index % colors.length]}>
+                <Scatter data={plot.data} dataKey="y" fill={colors[index % colors.length]}>
                   {plot.data.map((entry, i) => (
                     <Cell key={`cell-${i}`} fill={colors[index % colors.length]} />
                   ))}

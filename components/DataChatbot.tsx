@@ -265,17 +265,17 @@ export function DataChatbot({ datasetId, isOpen, onToggle }: DataChatbotProps) {
       {/* Suggested Questions */}
       {suggestedQuestions.length > 0 && messages.length <= 1 && (
         <div className="p-4 border-t">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Suggested questions:</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">Suggested questions:</div>
+          <div className="space-y-2">
             {suggestedQuestions.slice(0, 3).map((question, index) => (
               <Button
                 key={index}
                 variant="outline"
                 size="sm"
                 onClick={() => handleSendMessage(question)}
-                className="text-xs h-auto py-1 px-2"
+                className="w-full text-left justify-start text-xs h-auto py-2 px-3 whitespace-normal break-words hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                {question}
+                <span className="block leading-relaxed">{question}</span>
               </Button>
             ))}
           </div>

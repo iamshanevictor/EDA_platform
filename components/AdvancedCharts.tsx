@@ -222,8 +222,11 @@ export function AdvancedCharts({ data, analysis }: AdvancedChartsProps) {
                   
                   <ScatterPlot 
                     data={data} 
-                    numericColumns={[getSelectedScatterColumns().x, getSelectedScatterColumns().y]} 
-                    maxPlots={1}
+                    numericColumns={numericColumns} 
+                    singlePlot={{
+                      xColumn: getSelectedScatterColumns().x,
+                      yColumn: getSelectedScatterColumns().y
+                    }}
                   />
                 </div>
               ) : (
