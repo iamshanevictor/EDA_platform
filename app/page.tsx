@@ -122,7 +122,7 @@ export default function HomePage() {
       {/* Footer */}
       <div className="border-t border-gray-200 dark:border-gray-700 py-8 mt-12">
         <div className="text-center text-gray-600 dark:text-gray-400">
-          <p>EDA Platform - Built with Next.js and Supabase</p>
+          <p>© 2025 Shane Victor Bato-on. All rights reserved.</p>
         </div>
       </div>
     </div>
