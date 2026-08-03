@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { AdvancedCharts } from '@/components/AdvancedCharts';
 import { ReportGenerator } from '@/components/ReportGenerator';
-import { DataChatbot } from '@/components/DataChatbot';
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
 import { deleteDataset } from '@/app/actions/deleteDataset';
 import { getDatasetData, getDatasetSample } from '@/app/actions/getDatasetData';
@@ -39,7 +38,6 @@ export function OptimizedDatasetTabs({ datasets }: OptimizedDatasetTabsProps) {
   const [activeDatasetId, setActiveDatasetId] = useState<number | null>(
     datasets.length > 0 ? datasets[0].id : null
   );
-  const [chatbotOpen, setChatbotOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [datasetToDelete, setDatasetToDelete] = useState<DatasetWithAnalysis | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -124,8 +122,6 @@ export function OptimizedDatasetTabs({ datasets }: OptimizedDatasetTabsProps) {
         />
       )}
 
-      {/* Chatbot Toggle (Managed by DataChatbot component) */}
-
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         isOpen={deleteDialogOpen}
@@ -134,15 +130,6 @@ export function OptimizedDatasetTabs({ datasets }: OptimizedDatasetTabsProps) {
         datasetName={datasetToDelete?.file_name || ''}
         isDeleting={isDeleting}
       />
-
-      {/* Data Chatbot */}
-      {activeDatasetId && (
-        <DataChatbot
-          datasetId={activeDatasetId}
-          isOpen={chatbotOpen}
-          onToggle={() => setChatbotOpen(!chatbotOpen)}
-        />
-      )}
     </div>
   );
 }

@@ -17,13 +17,12 @@
 
 ## 🎯 Overview
 
-The **EDA Platform** is a comprehensive web application designed to automate and streamline the process of Exploratory Data Analysis (EDA) for CSV datasets. Built with modern web technologies, it provides an intuitive interface for data scientists, analysts, and researchers to quickly understand their data through automated statistical analysis, visualizations, and AI-powered insights.
+The **EDA Platform** is a comprehensive web application designed to automate and streamline the process of Exploratory Data Analysis (EDA) for CSV datasets. Built with modern web technologies, it provides an intuitive interface for data scientists, analysts, and researchers to quickly understand their data through automated statistical analysis and visualizations.
 
 ### 🌟 Key Highlights
 
 - **🤖 Automated EDA**: Upload any CSV file and get instant comprehensive analysis
 - **📈 Rich Visualizations**: Interactive charts, histograms, scatter plots, and correlation heatmaps
-- **🧠 AI-Powered Chatbot**: Natural language queries about your data
 - **📄 PDF Reports**: Generate professional analysis reports
 - **⚡ High Performance**: Optimized for large datasets with lazy loading and caching
 - **🎨 Modern UI**: Clean, responsive design with dark/light mode support
@@ -43,12 +42,6 @@ The **EDA Platform** is a comprehensive web application designed to automate and
 - **Relationship Analysis**: Scatter plots for correlation exploration
 - **Data Quality Charts**: Missing value patterns and data completeness metrics
 - **Interactive Charts**: Built with Recharts for smooth user experience
-
-### 🤖 **AI-Powered Data Assistant**
-- **Natural Language Queries**: Ask questions about your data in plain English
-- **Intelligent Insights**: Get automated insights and recommendations
-- **Context-Aware Responses**: AI understands your specific dataset structure
-- **Suggested Questions**: Pre-generated questions to help you explore your data
 
 ### 📄 **Professional Reporting**
 - **PDF Export**: Generate comprehensive analysis reports
@@ -86,8 +79,7 @@ The **EDA Platform** is a comprehensive web application designed to automate and
 - **Row Level Security (RLS)** - Data security
 - **Server Actions** - Server-side data processing
 
-### **AI & Analytics**
-- **Groq API** - Large Language Model integration
+### **Analytics**
 - **Papa Parse** - CSV parsing and processing
 - **Statistical Analysis** - Custom algorithms for EDA
 
@@ -131,7 +123,6 @@ Create a `.env.local` file in the root directory:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=your_supabase_anon_key
-GROQ_API_KEY=your_groq_api_key
 ```
 
 ### 5. Run the Development Server
@@ -207,12 +198,7 @@ CREATE POLICY "Allow all access for demo" ON dataset_analyses FOR ALL TO anon US
 - Analyze relationships with scatter plots
 - Review data quality metrics
 
-### 4. **Chat with Your Data**
-- Use the AI chatbot to ask questions about your dataset
-- Get insights and recommendations
-- Explore suggested questions for deeper analysis
-
-### 5. **Generate Reports**
+### 4. **Generate Reports**
 - Create professional PDF reports
 - Customize report content
 - Export for presentations or documentation
@@ -236,7 +222,6 @@ eda-platform/
 │   │   └── MissingValuesChart.tsx
 │   ├── AdvancedCharts.tsx       # Main visualization component
 │   ├── AnalysisResults.tsx      # Analysis display
-│   ├── DataChatbot.tsx          # AI chatbot
 │   ├── OptimizedDatasetTabs.tsx # Dataset management
 │   ├── ReportGenerator.tsx      # PDF report generation
 │   └── ui/                      # shadcn/ui components
@@ -245,18 +230,12 @@ eda-platform/
 │   └── utils.ts                # Helper functions
 └── app/actions/                # Server actions
     ├── analyzeData.ts          # EDA analysis logic
-    ├── chatbot.ts              # AI chatbot integration
     └── getDatasetData.ts       # Data fetching utilities
 ```
 
 ---
 
 ## 🔧 Configuration
-
-### Groq API Setup
-1. Sign up at [console.groq.com](https://console.groq.com)
-2. Create an API key
-3. Add it to your `.env.local` file as `GROQ_API_KEY`
 
 ### Customization Options
 - **Chart Colors**: Modify color schemes in chart components
@@ -327,7 +306,7 @@ We welcome contributions! Please follow these steps:
 
 ### Privacy
 - Data is stored in your Supabase instance
-- No data is sent to third-party services (except Groq for AI features)
+- Dataset content is not sent to an external AI provider
 - You maintain full control over your data
 
 ---
@@ -367,7 +346,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Supabase Team** - For the powerful backend platform
 - **shadcn/ui** - For the beautiful component library
 - **Recharts** - For the excellent charting library
-- **Groq** - For the fast AI inference API
 
 ---
 
