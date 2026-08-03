@@ -81,7 +81,17 @@ export function DataChatbot({ datasetId, isOpen, onToggle }: DataChatbotProps) {
   // Load dataset context and generate questions when chat opens
   useEffect(() => {
     if (isOpen && datasetId && !datasetContext) {
-      loadDatasetContext();
+      let cancelled = false;
+
+      queueMicrotask(() => {
+        if (!cancelled) {
+          void loadDatasetContext();
+        }
+      });
+
+      return () => {
+        cancelled = true;
+      };
     }
   }, [isOpen, datasetId, datasetContext, loadDatasetContext]);
 
