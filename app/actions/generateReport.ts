@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { requireDatasetId } from '@/lib/security/identifiers';
 
 export interface ReportData {
   dataset: {
@@ -32,6 +33,7 @@ export interface ReportData {
 }
 
 export async function generateReportData(datasetId: number): Promise<ReportData> {
+  requireDatasetId(datasetId);
   const supabase = await createClient();
   
   // Fetch dataset
@@ -42,7 +44,7 @@ export async function generateReportData(datasetId: number): Promise<ReportData>
     .single();
 
   if (datasetError) {
-    throw new Error(`Failed to fetch dataset: ${datasetError.message}`);
+    throw new Error('Dataset is unavailable');
   }
 
   if (!dataset) {
@@ -57,7 +59,7 @@ export async function generateReportData(datasetId: number): Promise<ReportData>
     .single();
 
   if (analysisError) {
-    throw new Error(`Failed to fetch analysis: ${analysisError.message}`);
+    throw new Error('Analysis is unavailable');
   }
 
   if (!analysis) {

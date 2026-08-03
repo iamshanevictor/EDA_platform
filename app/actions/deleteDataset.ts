@@ -1,9 +1,11 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { requireDatasetId } from '@/lib/security/identifiers';
 import { revalidatePath } from 'next/cache';
 
 export async function deleteDataset(datasetId: number): Promise<{ success: boolean; message: string }> {
+  requireDatasetId(datasetId);
   const supabase = await createClient();
   
   try {
@@ -19,13 +21,22 @@ export async function deleteDataset(datasetId: number): Promise<{ success: boole
     }
 
     // Then, delete the dataset
-    const { error: datasetError } = await supabase
+    const { data: deletedDataset, error: datasetError } = await supabase
       .from('datasets')
       .delete()
-      .eq('id', datasetId);
+      .eq('id', datasetId)
+      .select('id')
+      .maybeSingle();
 
     if (datasetError) {
-      throw new Error(`Failed to delete dataset: ${datasetError.message}`);
+      throw new Error('Dataset deletion failed');
+    }
+
+    if (!deletedDataset) {
+      return {
+        success: false,
+        message: 'Dataset not found or already expired'
+      };
     }
 
     // Revalidate the data page to refresh the UI
@@ -40,7 +51,7 @@ export async function deleteDataset(datasetId: number): Promise<{ success: boole
     console.error('Delete dataset error:', error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to delete dataset'
+      message: 'Failed to delete dataset'
     };
   }
 }

@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { getCachedData, setCachedData } from '@/lib/cache';
+import { requireDatasetId, requirePage, requirePageSize } from '@/lib/security/identifiers';
 
 export interface DatasetDataResponse {
   data: Record<string, unknown>[];
@@ -14,28 +14,13 @@ export async function getDatasetData(
   page: number = 1, 
   pageSize: number = 1000
 ): Promise<DatasetDataResponse> {
-  // Check cache first
-  const cacheKey = `dataset_${datasetId}_page_${page}_size_${pageSize}`;
-  const cachedData = getCachedData<DatasetDataResponse>(cacheKey);
-  
-  if (cachedData) {
-    return cachedData;
-  }
+  requireDatasetId(datasetId);
+  requirePage(page);
+  requirePageSize(pageSize);
 
   const supabase = await createClient();
   
   try {
-    // Get total count first
-    const { error: countError } = await supabase
-      .from('datasets')
-      .select('data', { count: 'exact', head: true })
-      .eq('id', datasetId)
-      .single();
-
-    if (countError) {
-      throw new Error(`Failed to get dataset count: ${countError.message}`);
-    }
-
     // Fetch the full dataset
     const { data: dataset, error } = await supabase
       .from('datasets')
@@ -44,7 +29,7 @@ export async function getDatasetData(
       .single();
 
     if (error) {
-      throw new Error(`Failed to fetch dataset: ${error.message}`);
+      throw new Error('Dataset data is unavailable');
     }
 
     if (!dataset || !dataset.data) {
@@ -60,19 +45,14 @@ export async function getDatasetData(
     const paginatedData = csvData.slice(startIndex, endIndex);
     const hasMore = endIndex < totalRows;
 
-    const result = {
+    return {
       data: paginatedData,
       totalRows,
       hasMore
     };
-
-    // Cache the result for 5 minutes
-    setCachedData(cacheKey, result, 5 * 60 * 1000);
-
-    return result;
   } catch (error) {
-    console.error('Error fetching dataset data:', error);
-    throw error;
+    console.error('Error fetching dataset data');
+    throw error instanceof Error ? error : new Error('Dataset data is unavailable');
   }
 }
 
@@ -80,13 +60,8 @@ export async function getDatasetSample(
   datasetId: number, 
   sampleSize: number = 1000
 ): Promise<Record<string, unknown>[]> {
-  // Check cache first
-  const cacheKey = `dataset_${datasetId}_sample_${sampleSize}`;
-  const cachedData = getCachedData<Record<string, unknown>[]>(cacheKey);
-  
-  if (cachedData) {
-    return cachedData;
-  }
+  requireDatasetId(datasetId);
+  requirePageSize(sampleSize);
 
   const supabase = await createClient();
   
@@ -98,7 +73,7 @@ export async function getDatasetSample(
       .single();
 
     if (error) {
-      throw new Error(`Failed to fetch dataset: ${error.message}`);
+      throw new Error('Dataset sample is unavailable');
     }
 
     if (!dataset || !dataset.data) {
@@ -114,14 +89,9 @@ export async function getDatasetSample(
 
     // Simple random sampling
     const shuffled = [...csvData].sort(() => 0.5 - Math.random());
-    const result = shuffled.slice(0, sampleSize);
-    
-    // Cache the result for 10 minutes (samples change less frequently)
-    setCachedData(cacheKey, result, 10 * 60 * 1000);
-    
-    return result;
+    return shuffled.slice(0, sampleSize);
   } catch (error) {
-    console.error('Error fetching dataset sample:', error);
-    throw error;
+    console.error('Error fetching dataset sample');
+    throw error instanceof Error ? error : new Error('Dataset sample is unavailable');
   }
 }

@@ -1,3 +1,5 @@
+import { UPLOAD_LIMITS } from "../security/upload-limits";
+
 export interface AnalysisResult {
   summary_stats: Record<
     string,
@@ -134,7 +136,7 @@ export function analyzeDatasetData(
 
   const numericColumns = columns.filter(
     (column) => columnTypes[column] === "numeric",
-  );
+  ).slice(0, UPLOAD_LIMITS.maxCorrelationColumns);
 
   for (let i = 0; i < numericColumns.length; i++) {
     for (let j = 0; j < numericColumns.length; j++) {

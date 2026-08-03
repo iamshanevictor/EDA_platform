@@ -1,231 +1,186 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import Papa from 'papaparse';
-import { createClient } from '@/lib/supabase/client';
-import { analyzeData, saveAnalysis } from '@/app/actions/analyzeData';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  UploadValidationError,
+  validateCsvFileMetadata,
+} from "@/lib/security/upload-limits";
+import Link from "next/link";
+import { useCallback, useRef, useState } from "react";
+
+interface UploadResponse {
+  datasetId?: number;
+  expiresAt?: string;
+  error?: string;
+}
 
 export default function UploadPage() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<string>('');
-  const supabase = createClient();
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+  const [uploadedDatasetId, setUploadedDatasetId] = useState<number | null>(null);
+
+  const handleToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type === 'text/csv') {
-      setSelectedFile(file);
-      setUploadStatus('');
-      console.log('Selected CSV file:', file);
-      console.log('File name:', file.name);
-      console.log('File size:', file.size, 'bytes');
-      console.log('File type:', file.type);
-    } else if (file) {
-      alert('Please select a CSV file');
+    const file = event.target.files?.[0] ?? null;
+    setError("");
+    setUploadedDatasetId(null);
+
+    if (!file) {
       setSelectedFile(null);
+      return;
+    }
+
+    try {
+      validateCsvFileMetadata(file);
+      setSelectedFile(file);
+    } catch (validationError) {
+      setSelectedFile(null);
+      event.target.value = "";
+      setError(
+        validationError instanceof UploadValidationError
+          ? validationError.message
+          : "Please select a valid CSV file.",
+      );
     }
   }, []);
 
   const handleFileUpload = useCallback(async () => {
-    if (!selectedFile) {
-      alert('Please select a file first');
+    if (!selectedFile || !turnstileToken) {
+      setError("Select a CSV file and complete the security challenge.");
       return;
     }
 
     setIsUploading(true);
-    setUploadStatus('Uploading file...');
+    setError("");
+    setStatus("Uploading, validating, and analyzing your CSV...");
 
     try {
-      // Parse CSV file using PapaParse with optimized settings
-      Papa.parse(selectedFile, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: (header) => header.trim(),
-        complete: async (results) => {
-          try {
-            console.log('Parsed CSV data:', results.data);
-            console.log('Parse errors:', results.errors);
+      const formData = new FormData();
+      formData.set("file", selectedFile);
+      formData.set("turnstileToken", turnstileToken);
 
-            setUploadStatus('Saving data to database...');
-
-            // Insert data into Supabase datasets table
-            const { data: insertData, error } = await supabase
-              .from('datasets')
-              .insert({
-                file_name: selectedFile.name,
-                file_size: selectedFile.size,
-                data: results.data
-              })
-              .select('id')
-              .single();
-
-            if (error) {
-              console.error('Supabase insert error:', error);
-              alert(`Error uploading file: ${error.message}`);
-              return;
-            }
-
-            console.log('Successfully inserted data:', insertData);
-            setUploadStatus('Running EDA analysis...');
-            setIsAnalyzing(true);
-
-            // Run EDA analysis
-            try {
-              const analysis = await analyzeData(insertData.id);
-              await saveAnalysis(insertData.id, analysis);
-              
-              console.log('Analysis completed:', analysis);
-              setUploadStatus('Analysis completed successfully!');
-              
-              // Show success message
-              alert('File uploaded and analyzed successfully! Check the Data Analysis page to see the results.');
-              
-              // Reset form
-              setSelectedFile(null);
-              const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
-              if (fileInput) {
-                fileInput.value = '';
-              }
-            } catch (analysisError) {
-              console.error('Analysis error:', analysisError);
-              setUploadStatus('Upload successful, but analysis failed. You can still view the data.');
-              alert('File uploaded successfully, but analysis failed. You can still view the raw data.');
-            }
-
-          } catch (parseError) {
-            console.error('Error processing parsed data:', parseError);
-            alert('Error processing the parsed data');
-          } finally {
-            setIsUploading(false);
-            setIsAnalyzing(false);
-            setTimeout(() => setUploadStatus(''), 3000);
-          }
-        },
-        error: (error) => {
-          console.error('PapaParse error:', error);
-          alert(`Error parsing CSV file: ${error.message}`);
-          setIsUploading(false);
-          setIsAnalyzing(false);
-          setUploadStatus('');
-        }
+      const response = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData,
+        credentials: "same-origin",
       });
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Error uploading file');
+      const result = (await response.json()) as UploadResponse;
+
+      if (!response.ok || !result.datasetId) {
+        throw new Error(result.error || "The upload could not be completed.");
+      }
+
+      setUploadedDatasetId(result.datasetId);
+      setStatus(
+        result.expiresAt
+          ? `Analysis complete. This dataset expires ${new Date(result.expiresAt).toLocaleString()}.`
+          : "Analysis complete. This dataset expires within 24 hours.",
+      );
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (uploadError) {
+      setStatus("");
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "The upload could not be completed.",
+      );
+    } finally {
       setIsUploading(false);
-      setIsAnalyzing(false);
-      setUploadStatus('');
+      setTurnstileResetKey((value) => value + 1);
     }
-  }, [selectedFile, supabase]);
+  }, [selectedFile, turnstileToken]);
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto max-w-4xl p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Upload CSV
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Upload and analyze your CSV files with automated EDA
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Upload CSV</h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
+          Upload a bounded CSV for private, session-isolated exploratory analysis.
         </p>
       </div>
 
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>CSV File Upload & Analysis</CardTitle>
+          <CardTitle>CSV file upload and analysis</CardTitle>
           <CardDescription>
-            Select a CSV file to upload, parse, and automatically analyze
+            Maximum 2 MiB, 10,000 rows, 100 columns, and 500,000 non-empty cells.
+            Data is automatically removed after 24 hours.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label 
-                htmlFor="csv-upload" 
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              <label
+                htmlFor="csv-upload"
+                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Choose CSV File
+                Choose CSV file
               </label>
               <input
+                ref={fileInputRef}
                 id="csv-upload"
                 type="file"
-                accept=".csv"
+                accept=".csv,text/csv"
                 onChange={handleFileChange}
-                disabled={isUploading || isAnalyzing}
-                className="block w-full text-sm text-gray-500 dark:text-gray-400
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100
-                  dark:file:bg-blue-900 dark:file:text-blue-300
-                  dark:hover:file:bg-blue-800
-                  border border-gray-300 dark:border-gray-600
-                  rounded-md p-2
-                  bg-white dark:bg-gray-800
-                  disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isUploading}
+                className="block w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300"
               />
             </div>
-            
+
             {selectedFile && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                <h3 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                  File Selected
-                </h3>
-                <div className="text-sm text-green-700 dark:text-green-300 space-y-1">
-                  <p><strong>Name:</strong> {selectedFile.name}</p>
-                  <p><strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KB</p>
-                  <p><strong>Type:</strong> {selectedFile.type}</p>
-                </div>
-                
-                {/* Status Display */}
-                {(isUploading || isAnalyzing) && uploadStatus && (
-                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-sm text-blue-800 dark:text-blue-200">{uploadStatus}</span>
-                    </div>
-                  </div>
-                )}
-                
-                <button
-                  onClick={handleFileUpload}
-                  disabled={isUploading || isAnalyzing}
-                  className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:cursor-not-allowed"
-                >
-                  {isUploading ? 'Uploading...' : isAnalyzing ? 'Analyzing...' : 'Upload & Analyze CSV'}
-                </button>
+              <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200">
+                <p><strong>Name:</strong> {selectedFile.name}</p>
+                <p><strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KiB</p>
               </div>
             )}
 
-            {/* Process Steps */}
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                What happens when you upload:
-              </h4>
-              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>1. Parse CSV file and validate data</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>2. Save data to database</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>3. Run automated EDA analysis</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>4. Generate statistics and insights</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>5. View results in Data Analysis</span>
-                </div>
+            <TurnstileWidget onToken={handleToken} resetKey={turnstileResetKey} />
+
+            {error && (
+              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200" role="alert">
+                {error}
+              </p>
+            )}
+
+            {status && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200" aria-live="polite">
+                <p>{status}</p>
+                {uploadedDatasetId && (
+                  <Link href="/data" className="mt-2 inline-block font-medium underline">
+                    View your analysis
+                  </Link>
+                )}
               </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleFileUpload}
+              disabled={!selectedFile || !turnstileToken || isUploading}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+            >
+              {isUploading ? "Processing..." : "Upload and analyze CSV"}
+            </button>
+
+            <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+              <p>
+                Your CSV is processed on the application server and stored only in your
+                anonymous browser session. Dataset content is not sent to an AI provider.
+                Clearing browser data removes your ability to access the session before
+                automatic deletion.
+              </p>
             </div>
           </div>
         </CardContent>
