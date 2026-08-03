@@ -31,7 +31,7 @@ This file is the persistent execution log for the EDA Platform modernization. It
 | Next proposed phase | Phase 2 — anonymous isolation, retention, abuse protection, and permanent Groq removal, after explicit approval |
 | Approval to implement Phase 0 | Approved and implemented on 2026-08-04 |
 | Approval to implement Phase 1 | Approved and implemented on 2026-08-04 |
-| Implementation branch | `codex/phase-1-framework` |
+| Implementation branch | `phase-1-framework` |
 | Worktree at decision capture | Clean `master` at `88d1a2e` |
 
 ## Audit baseline
@@ -431,7 +431,7 @@ Append entries using this structure:
 ### 2026-08-04 — Phase 0 implemented and locally verified
 
 - Goal: recover a reproducible source-compatible baseline, establish quality commands, characterize current statistical behavior, and add CI without changing product formulas, UI, persistence, or cloud configuration.
-- Branch: `codex/phase-0-baseline`.
+- Branch: `phase-0-baseline`.
 - Commits: `e9bb454`, `b300ebe`, `73bd039`, and `8f450c9`.
 - Files changed: `.nvmrc`, `.github/workflows/ci.yml`, `package.json`, `package-lock.json`, `eslint.config.mjs`, `tailwind.config.ts`, Supabase client/config compatibility files, `app/actions/analyzeData.ts`, and new pure-analysis/test files under `lib/analysis/`.
 - Behavior changed: framework installation and developer commands now work; either documented Supabase key alias is accepted. Statistical output intentionally remains unchanged.
@@ -445,7 +445,7 @@ Append entries using this structure:
 ### 2026-08-04 — Phase 1 implemented and locally verified
 
 - Goal: move the recovered baseline to the supported Next 16/React 19 compatibility group and adopt current framework conventions without changing product behavior.
-- Branch: `codex/phase-1-framework`.
+- Branch: `phase-1-framework`.
 - Commits: `d4a94bc` and `dc1e475`.
 - Files changed: framework and lint manifests/configuration, TypeScript configuration, two React components, `next.config.ts`, and the root `middleware.ts` to `proxy.ts` rename.
 - Behavior changed: developer and production builds now use Next 16's default Turbopack path; the request matcher and session refresh behavior are preserved. No intentional user-facing behavior changed.
