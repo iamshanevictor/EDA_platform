@@ -25,12 +25,13 @@ This file is the persistent execution log for the EDA Platform modernization. It
 | Item | Status |
 |---|---|
 | Repository audit | Complete on 2026-08-03 |
-| Application changes | Phase 0 baseline, toolchain, characterization tests, and CI workflow complete locally |
-| Current execution phase | Phase 0 local implementation and verification complete; remote GitHub Actions run pending branch publication |
+| Application changes | Phase 1 framework/toolchain modernization complete locally |
+| Current execution phase | Phase 1 implementation and verification complete; awaiting review/publication |
 | Phase 0 preflight evidence | Substantially complete; usage totals and exact policy expressions/grants remain open. User reports no visible/configured Cron/Integrations or Storage buckets. |
-| Next proposed phase | Phase 1 — supported framework/toolchain, after Phase 0 review |
+| Next proposed phase | Phase 2 — anonymous isolation, retention, abuse protection, and permanent Groq removal, after explicit approval |
 | Approval to implement Phase 0 | Approved and implemented on 2026-08-04 |
-| Implementation branch | `codex/phase-0-baseline` |
+| Approval to implement Phase 1 | Approved and implemented on 2026-08-04 |
+| Implementation branch | `codex/phase-1-framework` |
 | Worktree at decision capture | Clean `master` at `88d1a2e` |
 
 ## Audit baseline
@@ -198,7 +199,7 @@ Vercel and Supabase are now the probable authoritative production services, but 
 
 ### Phase 0 — Baseline and safety net
 
-Status: **Implemented and verified locally; remote CI run pending**
+Status: **Complete; implemented, locally verified, and published**
 
 Goal: recover a reproducible source-aligned baseline and add quality gates without changing product behavior, statistics, database security, persistence, or UI.
 
@@ -251,7 +252,7 @@ Phase 0 completion gate:
 - [x] Clean installation succeeds without force flags.
 - [x] Lint, type-check, tests, and production build pass locally.
 - [x] Six characterization tests protect current analysis behavior.
-- [ ] GitHub Actions reproduces the same result remotely; pending publication of the local branch.
+- [ ] GitHub Actions reproduces the same result remotely. The branch was published, but the workflow is configured for pull requests and pushes to `master`, so a standalone branch push did not trigger it. Vercel's commit status succeeded.
 - [x] This worklog records every Phase 0 commit, command result, deviation, and remaining risk.
 
 Final local verification on Node `v24.12.0`, npm `11.6.2`:
@@ -269,19 +270,44 @@ Measured build concern: shared first-load JavaScript is 649 kB, including a 647 
 
 ### Phase 1 — Supported framework/toolchain
 
-Status: **Awaiting Phase 0 review, remote CI, and explicit approval**
+Status: **Implemented and verified locally; awaiting review/publication**
 
-Planned scope after Phase 0:
+Completed reviewable commits:
 
-- Upgrade the recovered Next 15 baseline to a supported Next 16/React 19 compatibility group.
-- Adopt native ESLint flat configuration and the ESLint CLI.
-- Remove obsolete custom Webpack/Turbopack configuration.
-- Migrate `middleware` to the supported `proxy` convention.
-- Keep product behavior unchanged.
+1. `d4a94bc chore(framework): upgrade to Next 16.2 LTS`
+   - Upgraded Next and `eslint-config-next` to `16.2.11`, React/React DOM to `19.2.8`, and aligned React type packages.
+   - Replaced the compatibility-based ESLint configuration with Next 16's native flat configuration and removed `@eslint/eslintrc`.
+   - Accepted Next 16's required TypeScript JSX transform and generated development-type include.
+   - Replaced two synchronous effect-state patterns exposed by the newer React hooks lint rules without disabling rules or changing visible behavior.
+
+2. `dc1e475 refactor(framework): adopt Next 16 runtime conventions`
+   - Renamed the root request boundary from `middleware.ts`/`middleware()` to `proxy.ts`/`proxy()` while preserving its matcher and Supabase session-refresh behavior.
+   - Removed the obsolete custom Webpack split-chunk override and redundant experimental package-import configuration.
+   - Removed the explicit `--turbopack` development flag because Turbopack is the Next 16 default.
+
+Final local verification on Node `v24.12.0`, npm `11.6.2`:
+
+| Command | Exact result |
+|---|---|
+| `npm ci` | Exit `0`; 593 packages installed and 594 audited in 72 seconds; 3 high-severity advisories; no force flags. |
+| `npm run lint` | Exit `0`; ESLint CLI reported no warnings or errors. |
+| `npm run typecheck` | Exit `0`; TypeScript emitted no errors. |
+| `npm test` | Exit `0`; 1 file passed and all 6 tests passed. Windows sandbox execution required permission for Vitest worker-process spawning. |
+| `npm run build` | Exit `0`; Next `16.2.11` used Turbopack, compiled in 9.1 seconds, type-checked, and generated all 8 static/dynamic routes plus the proxy boundary. Build used non-secret placeholder configuration. |
+| `npm audit --omit=dev` | Exit `1`; 3 high-severity advisories remain in Next's bundled `postcss` and `sharp`. npm's forced proposal would downgrade to incompatible Next `9.3.3`, so it was rejected. |
+
+Phase 1 completion gate:
+
+- [x] Supported Next 16/React 19 compatibility group installed reproducibly.
+- [x] Native flat ESLint configuration passes with zero warnings.
+- [x] Root middleware migrated to the supported proxy convention.
+- [x] Custom Webpack override removed and production Turbopack build passes.
+- [x] Product UI, statistics, database behavior, and cloud configuration remain intentionally unchanged.
+- [ ] Remote CI will run when a pull request is opened or this branch is pushed/merged to `master`.
 
 ### Phase 2 — Anonymous isolation, retention, and abuse protection
 
-Status: **Blocked on Phase 1 completion**
+Status: **Awaiting Phase 1 review and explicit approval**
 
 Planned scope includes permanent Groq/chatbot removal from code, dependencies, documentation, and Vercel configuration; anonymous Supabase identities; immutable dataset ownership; ownership-based RLS and minimum grants; server-verified Turnstile; atomic database-backed quotas; confirmed upload/analysis limits; 24-hour cleanup migrations and monitored Cron; operational kill switches; and security tests. This phase is a privacy/security public-release gate.
 
@@ -415,3 +441,16 @@ Append entries using this structure:
 - Newly confirmed correctness risk: native booleans are classified as numeric before the Boolean branch; row-misaligned correlation, index quartiles, population deviation, first-value inference, and broad date parsing are now covered by characterization tests.
 - Deferred risks: 3 high-severity Next transitive advisories; 649 kB shared first-load JavaScript; network-dependent Google font build; remote CI not yet run; RLS/abuse/privacy work remains gated for Phase 2; live production remains unchanged and should not be considered modernized.
 - Next approved step: review Phase 0 and decide whether to publish the branch for remote CI. Do not begin Phase 1 without explicit approval.
+
+### 2026-08-04 — Phase 1 implemented and locally verified
+
+- Goal: move the recovered baseline to the supported Next 16/React 19 compatibility group and adopt current framework conventions without changing product behavior.
+- Branch: `codex/phase-1-framework`.
+- Commits: `d4a94bc` and `dc1e475`.
+- Files changed: framework and lint manifests/configuration, TypeScript configuration, two React components, `next.config.ts`, and the root `middleware.ts` to `proxy.ts` rename.
+- Behavior changed: developer and production builds now use Next 16's default Turbopack path; the request matcher and session refresh behavior are preserved. No intentional user-facing behavior changed.
+- Commands and exact results: clean `npm ci` passed; lint passed; type-check passed; 6/6 characterization tests passed; Next `16.2.11` production build passed and emitted 8 routes plus the proxy boundary.
+- Security/data impact: no Supabase schema, RLS policy, stored data, Vercel setting, environment value, or production deployment was changed. Three high-severity transitive advisories remain and npm's unsafe forced downgrade was rejected.
+- Decisions made: keep Node 24/npm 11; use native ESLint flat configuration; accept Next's `react-jsx` TypeScript migration; remove custom Webpack chunking and redundant import optimization; retain the internal `lib/supabase/middleware.ts` helper because only the root Next convention was renamed.
+- Deferred risks: permanent Groq/chatbot removal, anonymous identity and RLS isolation, quotas/Turnstile, 24-hour cleanup, security headers, statistical corrections, and broader dependency updates remain in later approved phases.
+- Next approved step: review and publish Phase 1. Do not begin Phase 2 without explicit approval because it includes privacy/security behavior, database migrations, and Groq removal.
