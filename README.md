@@ -1,366 +1,161 @@
-# 📊 EDA Platform - Exploratory Data Analysis Tool
+# EDA Platform
 
-<div align="center">
+A public anonymous demo for bounded exploratory analysis of CSV files. Each
+browser receives a temporary Supabase anonymous identity after passing
+Cloudflare Turnstile. Datasets are isolated by Row Level Security (RLS), become
+inaccessible after 24 hours, and are physically deleted by an hourly cleanup
+job.
 
-![EDA Platform](https://img.shields.io/badge/EDA-Platform-blue?style=for-the-badge&logo=chart-bar)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
-![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+The application does not include an AI chatbot and does not send dataset
+content to an external AI provider.
 
-**A powerful web application for automated Exploratory Data Analysis (EDA) of CSV datasets**
+## Supported stack
 
-[🚀 Live Demo](#demo) • [📖 Documentation](#features) • [🛠️ Setup](#setup) • [📊 Screenshots](#screenshots)
+- Node.js 24.x and npm 11.x
+- Next.js 16.2 and React 19.2
+- TypeScript and Tailwind CSS 3.4
+- Supabase Auth and PostgreSQL
+- Papa Parse and Recharts
+- Cloudflare Turnstile
 
-</div>
+Use npm as the only package manager. The required versions are recorded in
+`package.json`, `package-lock.json`, and `.nvmrc`.
 
----
+## Public-demo limits
 
-## 🎯 Overview
+| Boundary | Limit |
+|---|---:|
+| CSV file size | 2 MiB |
+| Rows | 10,000 |
+| Columns | 100 |
+| Total cells | 500,000 |
+| Header length | 128 characters |
+| Cell length | 10,000 characters |
+| Stored parsed JSON | 8 MiB |
+| Numeric columns used for correlation | 30 |
+| Upload attempts | 5 per anonymous identity per hour |
+| Active datasets | 5 per anonymous identity |
+| Processing reservation | 1 per identity per 30 seconds |
+| Application processing deadline | 18 seconds within a 20-second route limit |
+| Retention | Hidden at 24 hours; hourly physical cleanup |
 
-The **EDA Platform** is a comprehensive web application designed to automate and streamline the process of Exploratory Data Analysis (EDA) for CSV datasets. Built with modern web technologies, it provides an intuitive interface for data scientists, analysts, and researchers to quickly understand their data through automated statistical analysis and visualizations.
+These limits protect free Vercel and Supabase capacity. Raising them requires
+profiling the JSONB storage and synchronous analysis path first.
 
-### 🌟 Key Highlights
+## Local setup
 
-- **🤖 Automated EDA**: Upload any CSV file and get instant comprehensive analysis
-- **📈 Rich Visualizations**: Interactive charts, histograms, scatter plots, and correlation heatmaps
-- **📄 PDF Reports**: Generate professional analysis reports
-- **⚡ High Performance**: Optimized for large datasets with lazy loading and caching
-- **🎨 Modern UI**: Clean, responsive design with dark/light mode support
+1. Install the declared runtime and dependencies:
 
----
-
-## ✨ Features
-
-### 📊 **Automated Data Analysis**
-- **Summary Statistics**: Mean, median, standard deviation, quartiles for numeric columns
-- **Data Type Detection**: Automatic identification of numeric, text, and categorical data
-- **Missing Value Analysis**: Comprehensive missing data detection and visualization
-- **Correlation Analysis**: Pearson correlation matrix with heatmap visualization
-
-### 📈 **Advanced Visualizations**
-- **Distribution Charts**: Histograms for numeric data distribution analysis
-- **Relationship Analysis**: Scatter plots for correlation exploration
-- **Data Quality Charts**: Missing value patterns and data completeness metrics
-- **Interactive Charts**: Built with Recharts for smooth user experience
-
-### 📄 **Professional Reporting**
-- **PDF Export**: Generate comprehensive analysis reports
-- **Print-Friendly**: Optimized layouts for both screen and print
-- **Customizable**: Include/exclude sections based on your needs
-- **Professional Formatting**: Clean, structured reports ready for presentation
-
-### ⚡ **Performance & Scalability**
-- **Lazy Loading**: Load data on-demand to handle large datasets
-- **Data Sampling**: Intelligent sampling for visualization performance
-- **Caching**: In-memory caching for faster repeated access
-- **Pagination**: Efficient handling of large datasets
-
-### 🎨 **User Experience**
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **Dark/Light Mode**: Toggle between themes for comfortable viewing
-- **Intuitive Navigation**: Clean, organized interface
-- **Real-time Feedback**: Loading states and progress indicators
-
----
-
-## 🛠️ Technology Stack
-
-### **Frontend**
-- **Next.js 15** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first CSS framework
-- **shadcn/ui** - Modern component library
-- **Recharts** - Data visualization library
-- **Lucide React** - Beautiful icons
-
-### **Backend & Database**
-- **Supabase** - Backend-as-a-Service
-- **PostgreSQL** - Relational database
-- **Row Level Security (RLS)** - Data security
-- **Server Actions** - Server-side data processing
-
-### **Analytics**
-- **Papa Parse** - CSV parsing and processing
-- **Statistical Analysis** - Custom algorithms for EDA
-
-### **Development Tools**
-- **ESLint** - Code linting
-- **PostCSS** - CSS processing
-- **Git** - Version control
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ 
-- npm, yarn, or pnpm
-- Supabase account (free tier available)
-
-### 1. Clone the Repository
-   ```bash
-git clone <your-repo-url>
-cd eda-platform
+   ```powershell
+   npm ci
    ```
 
-### 2. Install Dependencies
-   ```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
+2. Copy `.env.example` to `.env.local` and set:
+
+   | Variable | Visibility | Purpose |
+   |---|---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY` | Public | Supabase publishable/anon key |
+   | `SUPABASE_SECRET_KEY` | Server-only secret | Invokes bounded write/quota RPCs after verification |
+   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public | Turnstile widget key |
+   | `TURNSTILE_SECRET_KEY` | Server-only secret | Verifies upload challenges for existing sessions |
+   | `UPLOADS_ENABLED` | Server-only | Emergency upload kill switch; only `true` enables uploads |
+
+   Never prefix the service-role or Turnstile secret with `NEXT_PUBLIC_`.
+   Never log or commit their values.
+   A legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted temporarily, but current
+   Supabase `sb_secret_...` keys are preferred.
+
+3. Start the development server:
+
+   ```powershell
+   npm run dev
+   ```
+
+4. Open <http://localhost:3000>.
+
+Cloudflare provides test keys for automated/local testing. Use production keys
+only with reviewed hostname restrictions.
+
+## Database and Auth setup
+
+The repository uses a versioned migration instead of dashboard-authored demo
+policies:
+
+```text
+supabase/migrations/20260804000100_phase_2_security.sql
 ```
 
-### 3. Set Up Supabase
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to Settings → API to get your project URL and anon key
-3. Create the required database tables (see [Database Setup](#database-setup))
+Before applying it, follow
+[`supabase/PHASE_2_DEPLOYMENT.md`](supabase/PHASE_2_DEPLOYMENT.md). The migration
+must be tested against the target schema and applied during a controlled cloud
+checkpoint with uploads disabled.
 
-### 4. Environment Configuration
-Create a `.env.local` file in the root directory:
+Required Supabase Auth settings:
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=your_supabase_anon_key
-```
+- enable anonymous sign-ins;
+- configure Turnstile CAPTCHA for Auth;
+- disable unused email/password signup for this anonymous-only demo;
+- keep the service-role key server-only.
 
-### 5. Run the Development Server
-   ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+Do not recreate the former public `FOR ALL` policies. Anonymous identities use
+the `authenticated` Postgres role; ownership and expiry are enforced by RLS.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Runtime data flow
 
----
+1. The browser selects a CSV and completes the Turnstile widget.
+2. `POST /api/uploads` rejects disabled, cross-origin, oversized, or malformed
+   requests before persistence.
+3. Supabase verifies Turnstile while creating the first anonymous identity. For
+   an existing identity, the application verifies the single-use token directly
+   with Cloudflare Siteverify, including hostname and action.
+4. A server-only Supabase client reserves an atomic quota slot.
+5. The server decodes UTF-8, parses and validates CSV structure, bounds JSON
+   expansion, and computes EDA results.
+6. A service-role-only database function revalidates the reservation/envelope
+   and atomically inserts the owned dataset and analysis.
+7. Reads and deletes use the visitor's anonymous session and owner-based RLS.
+8. RLS hides data at 24 hours; Supabase Cron removes expired datasets and later
+   removes orphaned anonymous Auth users.
 
-## 🗄️ Database Setup
+The complete parsed CSV currently remains a JSONB row. Pagination slices that
+JSON after retrieval, so this is intentionally a small-file demo rather than a
+large-data platform.
 
-### Required Tables
+## Commands
 
-#### 1. Datasets Table
-```sql
-CREATE TABLE datasets (
-  id SERIAL PRIMARY KEY,
-  file_name TEXT NOT NULL,
-  file_size INTEGER NOT NULL,
-  data JSONB NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE datasets ENABLE ROW LEVEL SECURITY;
-
--- Allow public access for demo
-CREATE POLICY "Allow all access for demo" ON datasets FOR ALL TO anon USING (true);
-```
-
-#### 2. Dataset Analyses Table
-```sql
-CREATE TABLE dataset_analyses (
-  id SERIAL PRIMARY KEY,
-  dataset_id INTEGER REFERENCES datasets(id) ON DELETE CASCADE,
-  summary_stats JSONB NOT NULL,
-  missing_values JSONB NOT NULL,
-  column_types JSONB NOT NULL,
-  correlation_matrix JSONB NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE dataset_analyses ENABLE ROW LEVEL SECURITY;
-
--- Allow public access for demo
-CREATE POLICY "Allow all access for demo" ON dataset_analyses FOR ALL TO anon USING (true);
-```
-
----
-
-## 📱 Usage Guide
-
-### 1. **Upload Your Data**
-- Navigate to the Upload page
-- Select a CSV file from your computer
-- The system will automatically parse and analyze your data
-
-### 2. **Explore Analysis Results**
-- View comprehensive summary statistics
-- Examine data types and missing value patterns
-- Review correlation matrices
-
-### 3. **Visualize Your Data**
-- Browse interactive charts and graphs
-- Explore data distributions with histograms
-- Analyze relationships with scatter plots
-- Review data quality metrics
-
-### 4. **Generate Reports**
-- Create professional PDF reports
-- Customize report content
-- Export for presentations or documentation
-
----
-
-## 🏗️ Project Structure
-
-```
-eda-platform/
-├── app/                          # Next.js App Router
-│   ├── data/                     # Data analysis page
-│   ├── upload/                   # CSV upload page
-│   ├── api/                      # API routes
-│   └── layout.tsx               # Root layout
-├── components/                   # React components
-│   ├── charts/                  # Chart components
-│   │   ├── HistogramChart.tsx
-│   │   ├── ScatterPlot.tsx
-│   │   ├── CorrelationHeatmap.tsx
-│   │   └── MissingValuesChart.tsx
-│   ├── AdvancedCharts.tsx       # Main visualization component
-│   ├── AnalysisResults.tsx      # Analysis display
-│   ├── OptimizedDatasetTabs.tsx # Dataset management
-│   ├── ReportGenerator.tsx      # PDF report generation
-│   └── ui/                      # shadcn/ui components
-├── lib/                         # Utilities and configurations
-│   ├── supabase/               # Supabase client setup
-│   └── utils.ts                # Helper functions
-└── app/actions/                # Server actions
-    ├── analyzeData.ts          # EDA analysis logic
-    └── getDatasetData.ts       # Data fetching utilities
-```
-
----
-
-## 🔧 Configuration
-
-### Customization Options
-- **Chart Colors**: Modify color schemes in chart components
-- **Analysis Parameters**: Adjust statistical calculations in `analyzeData.ts`
-- **UI Themes**: Customize Tailwind CSS classes
-- **Report Templates**: Modify `ReportTemplate.tsx` for custom report layouts
-
----
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy automatically
-
-### Other Platforms
-The application can be deployed to any platform that supports Next.js:
-- Netlify
-- Railway
-- DigitalOcean App Platform
-- AWS Amplify
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow TypeScript best practices
-- Use meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-
----
-
-## 📊 Performance
-
-### Optimizations Implemented
-- **Lazy Loading**: Data loaded on-demand
-- **Data Sampling**: Reduced data points for visualizations
-- **Caching**: In-memory caching for repeated requests
-- **Pagination**: Efficient handling of large datasets
-- **Bundle Optimization**: Tree-shaking and code splitting
-
-### Benchmarks
-- **Small Datasets** (< 1,000 rows): < 2 seconds analysis time
-- **Medium Datasets** (1,000-10,000 rows): < 5 seconds analysis time
-- **Large Datasets** (10,000+ rows): < 10 seconds analysis time with sampling
-
----
-
-## 🔒 Security
-
-### Data Protection
-- **No Authentication Required**: Public demo mode for easy access
-- **Row Level Security**: Database-level access control
-- **Input Validation**: Sanitized CSV parsing
-- **Error Handling**: Graceful error management
-
-### Privacy
-- Data is stored in your Supabase instance
-- Dataset content is not sent to an external AI provider
-- You maintain full control over your data
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### Build Errors
-   ```bash
-# Clear Next.js cache
-rm -rf .next
+```powershell
+npm run lint
+npm run typecheck
+npm test
 npm run build
 ```
 
-#### Supabase Connection Issues
-- Verify your environment variables
-- Check Supabase project status
-- Ensure RLS policies are correctly configured
+CI runs a clean install followed by all four commands. Production builds need
+non-secret build-time values for the public Supabase and Turnstile variables.
 
-#### CSV Upload Issues
-- Ensure file is valid CSV format
-- Check file size limits
-- Verify file encoding (UTF-8 recommended)
+## Reports
 
----
+Reports are rendered as print-friendly HTML. Use the browser's Print dialog to
+save a searchable/selectable PDF. Pixel-identical PDF output is not a goal.
 
-## 📄 License
+## Security operations
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Keep `UPLOADS_ENABLED=false` until the migration, Auth CAPTCHA, Turnstile,
+  cross-session isolation tests, and production deployment checks pass.
+- Delete the obsolete external-AI credential from Vercel; the application no
+  longer reads or needs it.
+- Protect preview deployments and configure available Vercel bot/firewall
+  controls. Application quotas do not replace edge DDoS/bot controls.
+- Monitor Vercel usage, Supabase database size/egress/Auth users, quota errors,
+  and the cleanup job. Use conservative alerts at 50%, 75%, and 90%.
+- During an incident, disable uploads first. Do not weaken RLS as a rollback.
 
----
+## Known analysis behavior
 
-## 🙏 Acknowledgments
-
-- **Next.js Team** - For the amazing React framework
-- **Supabase Team** - For the powerful backend platform
-- **shadcn/ui** - For the beautiful component library
-- **Recharts** - For the excellent charting library
-
----
-
-## 📞 Support
-
-- **Documentation**: Check this README and inline code comments
-- **Issues**: Open an issue on GitHub for bugs or feature requests
-- **Discussions**: Use GitHub Discussions for questions and ideas
-
----
-
-<div align="center">
-
-**Built with ❤️ for the data science community**
-
-[⭐ Star this repo](https://github.com/your-username/eda-platform) • [🐛 Report Bug](https://github.com/your-username/eda-platform/issues) • [💡 Request Feature](https://github.com/your-username/eda-platform/issues)
-
-</div>
+Phase 0 characterization tests intentionally preserve several historical
+statistical behaviors, including first-value type inference, broad date parsing,
+population standard deviation, index-based quartiles, Boolean numeric coercion,
+and row-misaligned correlations. Statistical corrections are planned as a
+separate reviewed phase. Phase 2 only caps correlation work to 30 numeric
+columns for resource safety.

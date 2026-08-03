@@ -25,13 +25,14 @@ This file is the persistent execution log for the EDA Platform modernization. It
 | Item | Status |
 |---|---|
 | Repository audit | Complete on 2026-08-03 |
-| Application changes | Phase 1 framework/toolchain modernization complete locally |
-| Current execution phase | Phase 1 implementation and verification complete; awaiting review/publication |
+| Application changes | Phase 2 security/privacy implementation complete locally; cloud state unchanged |
+| Current execution phase | Phase 2 local verification complete; controlled Supabase/Vercel application and end-to-end isolation tests pending |
 | Phase 0 preflight evidence | Substantially complete; usage totals and exact policy expressions/grants remain open. User reports no visible/configured Cron/Integrations or Storage buckets. |
-| Next proposed phase | Phase 2 — anonymous isolation, retention, abuse protection, and permanent Groq removal, after explicit approval |
+| Next proposed phase | Phase 2 cloud checkpoint — backup/export, apply migration/configuration with uploads disabled, then cross-session verification |
 | Approval to implement Phase 0 | Approved and implemented on 2026-08-04 |
 | Approval to implement Phase 1 | Approved and implemented on 2026-08-04 |
-| Implementation branch | `phase-1-framework` |
+| Approval to implement Phase 2 locally | Approved and implemented on 2026-08-04; cloud application not yet authorized |
+| Implementation branch | `phase-2-security` |
 | Worktree at decision capture | Clean `master` at `88d1a2e` |
 
 ## Audit baseline
@@ -71,10 +72,10 @@ Use these conservative limits first. They can be raised only after profiling the
 | Raw CSV size | 2 MiB | Keeps anonymous abuse cost and parsed JSON expansion manageable. |
 | Data rows | 10,000 | Suitable for a synchronous personal/demo EDA flow without pretending to support large data. |
 | Columns | 100 | Prevents quadratic correlation work and unusable chart/report layouts. |
-| Non-empty cells | 500,000 | Adds a shape limit that row/file limits alone do not provide. |
+| Total cells | 500,000 | Adds a conservative shape limit that row/file limits alone do not provide. |
 | Header length | 128 characters | Bounds metadata, prompts/tooltips, and database payloads. |
 | Cell text length | 10,000 characters | Prevents single-cell memory and rendering abuse. |
-| Synchronous parse/analysis target | 10 seconds typical, 20 seconds hard timeout | Provides a clear user-facing failure boundary for a public demo. |
+| Synchronous parse/analysis target | 10 seconds typical, 18-second application deadline within a 20-second route limit | Provides a clear user-facing failure boundary for a public demo. |
 | Concurrent upload/analysis per anonymous session | 1 | Prevents accidental or abusive parallel resource consumption. |
 | Upload rate | 5 per hour per anonymous session, plus IP/platform protection | Conservative starting point; measure before increasing. |
 | Stored datasets per anonymous session | 5 active datasets | Bounds database/storage use until 24-hour cleanup runs. |
@@ -307,13 +308,54 @@ Phase 1 completion gate:
 
 ### Phase 2 — Anonymous isolation, retention, and abuse protection
 
-Status: **Awaiting Phase 1 review and explicit approval**
+Status: **Local implementation and verification complete; cloud application and end-to-end validation pending**
 
-Planned scope includes permanent Groq/chatbot removal from code, dependencies, documentation, and Vercel configuration; anonymous Supabase identities; immutable dataset ownership; ownership-based RLS and minimum grants; server-verified Turnstile; atomic database-backed quotas; confirmed upload/analysis limits; 24-hour cleanup migrations and monitored Cron; operational kill switches; and security tests. This phase is a privacy/security public-release gate.
+Completed reviewable commits:
+
+1. `a312416 refactor(ai): remove Groq and dataset chatbot`
+   - Removed the Groq SDK, chatbot server action, chatbot UI, and product-documentation references.
+   - Removed 19 installed packages and all runtime transmission of dataset samples to an AI provider.
+   - The obsolete Vercel credential still requires removal at the cloud checkpoint.
+
+2. `0a77449 feat(database): add anonymous isolation and retention migration`
+   - Added a forward migration that preserves legacy rows, adds anonymous ownership/expiry, enables RLS on all six public tables, removes old policies, revokes legacy table/sequence access, and grants owner-only read/delete access.
+   - Direct browser inserts and write/quota RPCs are denied to `anon` and `authenticated`; only a server-only Supabase secret may invoke bounded write functions.
+   - Added atomic upload attempt quotas, a 30-second processing reservation, a five-active-dataset limit, 24-hour visibility cutoff, hourly physical cleanup, and orphaned anonymous-user cleanup.
+   - Added backup, apply, verification, roll-forward, and safe-recovery guidance. The migration has not been executed against local or cloud PostgreSQL.
+
+3. `c5fe982 feat(security): enforce verified bounded uploads`
+   - Replaced direct browser parsing/database insertion with a same-origin `POST /api/uploads` server boundary.
+   - Added Turnstile verification, anonymous-session creation/refresh, server-only secret client isolation, atomic quota/write RPC use, an emergency upload kill switch, bounded UTF-8 CSV validation, stored-JSON limits, and an 18-second processing deadline.
+   - Removed the cross-session in-memory dataset cache, bounded identifiers/pagination and correlation work, made data rendering dynamic, reduced unsafe error disclosure, and added CSP/HSTS/content-type/referrer/framing/permissions headers.
+   - Added 13 security/limit tests alongside the 6 characterization tests and updated CI build configuration.
+
+Final local verification on Node `v24.12.0`, npm `11.6.2`:
+
+| Command | Exact result |
+|---|---|
+| `npm ci` | Exit `0`; 575 packages installed and 576 audited in 60 seconds; 3 high-severity advisories; no force flags. |
+| `npm run lint` | Exit `0`; ESLint reported no warnings or errors. |
+| `npm run typecheck` | Exit `0`; TypeScript emitted no errors. |
+| `npm test` | Exit `0`; 4 files passed and all 19 tests passed in 1.33 seconds. |
+| `npm run build` | Exit `0`; Next `16.2.11` compiled with Turbopack in 8.3 seconds, type-checked, and generated 8 routes including `/api/uploads`, plus the proxy boundary. Non-secret test configuration was used. |
+| `npm audit --omit=dev` | Exit `1`; 3 high advisories remain in Next's bundled `postcss` and `sharp`; npm's forced proposal would install incompatible Next `9.3.3` and was rejected. |
+
+Phase 2 completion gate:
+
+- [x] Groq/chatbot runtime and dependency removed permanently from the repository.
+- [x] Anonymous ownership, RLS, least grants, quota, retention, and cleanup migration authored with recovery guidance.
+- [x] Browser database writes replaced with a Turnstile-gated, bounded, server-only write path.
+- [x] Security headers, kill switch, secret separation, validation, and automated tests pass locally.
+- [ ] Migration executed and validated against a disposable or linked Supabase schema.
+- [ ] Supabase anonymous sign-in/CAPTCHA configured and unused email signup disabled.
+- [ ] Turnstile and required Vercel server/public variables configured; obsolete external-AI credential removed.
+- [ ] Two independent anonymous browser sessions pass owner-isolation tests in the deployed environment.
+- [ ] Quota, expiry, Cron cleanup, monitoring, edge bot/firewall, and emergency kill-switch checks pass.
+- [ ] `UPLOADS_ENABLED=true` only after every preceding cloud gate passes.
 
 ### Phase 3 — Dependency modernization and intentional removals
 
-Status: **Blocked on earlier phases**
+Status: **Blocked on Phase 2 cloud validation**
 
 Planned scope includes compatible Supabase packages, UI/chart packages, and removal of remaining unused dependencies. Tailwind 4 and PDF-library removal remain separate reviewable changes.
 
@@ -454,3 +496,15 @@ Append entries using this structure:
 - Decisions made: keep Node 24/npm 11; use native ESLint flat configuration; accept Next's `react-jsx` TypeScript migration; remove custom Webpack chunking and redundant import optimization; retain the internal `lib/supabase/middleware.ts` helper because only the root Next convention was renamed.
 - Deferred risks: permanent Groq/chatbot removal, anonymous identity and RLS isolation, quotas/Turnstile, 24-hour cleanup, security headers, statistical corrections, and broader dependency updates remain in later approved phases.
 - Next approved step: review and publish Phase 1. Do not begin Phase 2 without explicit approval because it includes privacy/security behavior, database migrations, and Groq removal.
+
+### 2026-08-04 — Phase 2 local security implementation verified
+
+- Goal: remove external AI data transmission and implement the repository side of anonymous isolation, abuse protection, bounded uploads, and 24-hour retention without changing cloud state prematurely.
+- Branch: `phase-2-security`.
+- Commits: `a312416`, `0a77449`, and `c5fe982` plus the final documentation/worklog commit.
+- Behavior changed: dataset chat is removed; uploads require Turnstile, a temporary anonymous session, database quota reservation, and server-side validation; direct browser writes are removed; datasets are designed to be owner-isolated and expire after 24 hours once the migration is applied.
+- Commands and exact results: clean `npm ci` passed; lint passed; type-check passed; 19/19 tests passed; Next `16.2.11` production build passed; production audit still reports 3 high transitive advisories.
+- Security/data impact: repository security defaults changed substantially, but no Supabase row, schema, policy, Auth setting, Cron job, Vercel variable, firewall rule, or deployment was changed. `UPLOADS_ENABLED` defaults to false so an incomplete deployment fails closed.
+- Decisions made: prefer current Supabase publishable/secret keys with documented legacy fallbacks; use a server-only secret client only after application authorization; deny direct browser inserts; count total cells rather than only non-empty cells; cap stored JSON at 8 MiB and correlation work at 30 numeric columns; preserve legacy ownerless rows but keep them inaccessible and outside automatic cleanup.
+- Deferred risks: the SQL migration has not been executed; live Auth/RLS/quota/Turnstile/Cron isolation is unverified; edge bot/firewall controls and monitoring remain cloud tasks; local `.env.local` and Vercel may still contain the obsolete AI credential; statistical correctness and JSONB scalability remain later phases.
+- Next approved step: review the Phase 2 branch, then explicitly authorize the controlled cloud checkpoint. Keep uploads disabled until backup/export, migration application, environment/Auth configuration, two-session isolation, abuse-limit, expiry, cleanup, monitoring, and rollback checks all pass.

@@ -16,8 +16,9 @@ Supabase backup.
    used by the application. Supabase verifies the single-use token when the
    anonymous identity is first created; the application verifies it for later
    uploads in the same session.
-7. Add `SUPABASE_SERVICE_ROLE_KEY` as a server-only Vercel variable. Never use a
-   `NEXT_PUBLIC_` prefix or expose this value to a Client Component.
+7. Add a current `SUPABASE_SECRET_KEY` as a server-only Vercel variable. A
+   legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted only during migration. Never
+   use a `NEXT_PUBLIC_` prefix or expose either value to a Client Component.
 8. Set `UPLOADS_ENABLED=false` in Vercel before applying the migration.
 
 ## Migration effect
