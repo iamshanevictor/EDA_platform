@@ -89,4 +89,15 @@ describe("analyzeDatasetData current behavior", () => {
     expect(result.correlation_matrix.x.x).toBe(1);
     expect(result.correlation_matrix.y.y).toBe(1);
   });
+
+  it("bounds correlation work to the configured numeric-column limit", () => {
+    const row = Object.fromEntries(
+      Array.from({ length: 31 }, (_, index) => [`column_${index}`, index + 1]),
+    );
+    const result = analyzeDatasetData([row, row]);
+
+    expect(result.column_types.column_30).toBe("numeric");
+    expect(result.correlation_matrix.column_29.column_29).toBe(1);
+    expect(result.correlation_matrix.column_30.column_30).toBe(0);
+  });
 });

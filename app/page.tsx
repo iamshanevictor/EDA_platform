@@ -41,7 +41,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Support for large CSV files with automatic header detection and data validation.
+              Bounded CSV uploads with server-side validation and automatic analysis.
             </p>
           </CardContent>
         </Card>
@@ -73,7 +73,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Powered by Next.js, Supabase, and Tailwind CSS for a fast and secure experience.
+              Temporary session-isolated data with automatic 24-hour expiry.
             </p>
           </CardContent>
         </Card>
@@ -122,7 +122,7 @@ export default function HomePage() {
       {/* Footer */}
       <div className="border-t border-gray-200 dark:border-gray-700 py-8 mt-12">
         <div className="text-center text-gray-600 dark:text-gray-400">
-          <p>© 2025 Shane Victor Bato-on. All rights reserved.</p>
+          <p>© 2026 Shane Victor Bato-on. All rights reserved.</p>
         </div>
       </div>
     </div>

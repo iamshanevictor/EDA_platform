@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { OptimizedDatasetTabs } from '@/components/OptimizedDatasetTabs';
 import { getAnalysis } from '@/app/actions/analyzeData';
 
+export const dynamic = 'force-dynamic';
+
 interface Dataset {
   id: number;
   file_name: string;
@@ -54,7 +56,7 @@ export default async function DataPage() {
           <CardContent>
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
               <p className="text-red-800 dark:text-red-200">
-                Error: {error.message}
+                Your datasets could not be loaded. Please refresh and try again.
               </p>
             </div>
           </CardContent>
@@ -69,8 +71,8 @@ export default async function DataPage() {
       try {
         const analysis = await getAnalysis(dataset.id);
         return { ...dataset, analysis };
-      } catch (error) {
-        console.error(`Error fetching analysis for dataset ${dataset.id}:`, error);
+      } catch {
+        console.error('Error fetching dataset analysis');
         return { ...dataset, analysis: null };
       }
     })
