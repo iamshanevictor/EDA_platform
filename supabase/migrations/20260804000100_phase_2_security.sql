@@ -16,8 +16,7 @@ alter table public.datasets
 
 update public.datasets
 set expires_at = created_at + interval '24 hours'
-where owner_id is not null
-  and expires_at is null;
+where expires_at is null;
 
 alter table public.dataset_analyses
   add column if not exists owner_id uuid references auth.users(id) on delete cascade;
@@ -36,7 +35,7 @@ create index if not exists datasets_owner_created_idx
   on public.datasets (owner_id, created_at desc);
 create index if not exists datasets_expiry_idx
   on public.datasets (expires_at)
-  where owner_id is not null;
+  where expires_at is not null;
 create index if not exists dataset_analyses_owner_dataset_idx
   on public.dataset_analyses (owner_id, dataset_id);
 
@@ -397,12 +396,10 @@ begin
   delete from public.dataset_analyses as analysis
   using public.datasets as dataset
   where analysis.dataset_id = dataset.id
-    and dataset.owner_id is not null
     and dataset.expires_at <= now();
 
   delete from public.datasets
-  where owner_id is not null
-    and expires_at <= now();
+  where expires_at <= now();
   get diagnostics dataset_count = row_count;
 
   delete from private.upload_attempts
