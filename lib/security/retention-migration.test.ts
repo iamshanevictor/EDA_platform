@@ -12,6 +12,16 @@ const migration = readFileSync(
   "utf8",
 );
 
+const uploadExpiryFixMigration = readFileSync(
+  join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260805000100_phase_2_fix_upload_expiry_reference.sql",
+  ),
+  "utf8",
+);
+
 describe("Phase 2 retention migration", () => {
   it("backfills expiration for legacy ownerless datasets", () => {
     const backfill = migration.match(
@@ -27,6 +37,15 @@ describe("Phase 2 retention migration", () => {
     );
     expect(migration).not.toMatch(
       /delete from public\.datasets\s+where owner_id is not null\s+and expires_at <= now\(\);/,
+    );
+  });
+
+  it("qualifies the upload expiry reference against the datasets table", () => {
+    expect(uploadExpiryFixMigration).toContain(
+      "and public.datasets.expires_at > now()",
+    );
+    expect(uploadExpiryFixMigration).not.toMatch(
+      /^\s*and expires_at > now\(\)/m,
     );
   });
 });

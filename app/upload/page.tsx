@@ -82,13 +82,14 @@ export default function UploadPage() {
       setUploadedDatasetId(result.datasetId);
       setStatus(
         result.expiresAt
-          ? `Analysis complete. This dataset expires ${new Date(result.expiresAt).toLocaleString()}.`
-          : "Analysis complete. This dataset expires within 24 hours.",
+          ? `Analysis complete. This dataset expires ${new Date(result.expiresAt).toLocaleString()}. Opening your analysis...`
+          : "Analysis complete. This dataset expires within 24 hours. Opening your analysis...",
       );
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      window.location.assign("/data");
     } catch (uploadError) {
       setStatus("");
       setError(
@@ -116,7 +117,9 @@ export default function UploadPage() {
           <CardTitle>CSV file upload and analysis</CardTitle>
           <CardDescription>
             Maximum 2 MiB, 10,000 rows, 100 columns, and 500,000 non-empty cells.
-            Data is automatically removed after 24 hours.
+            Data is automatically removed after 24 hours. Each anonymous session may
+            make five upload attempts per rolling hour, with at least 30 seconds
+            between attempts. Failed processing attempts count toward this safety limit.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,7 +161,11 @@ export default function UploadPage() {
               <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200" aria-live="polite">
                 <p>{status}</p>
                 {uploadedDatasetId && (
-                  <Link href="/data" className="mt-2 inline-block font-medium underline">
+                  <Link
+                    href="/data"
+                    prefetch={false}
+                    className="mt-2 inline-block font-medium underline"
+                  >
                     View your analysis
                   </Link>
                 )}

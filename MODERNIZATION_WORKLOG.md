@@ -1,6 +1,6 @@
 # EDA Platform Modernization Worklog
 
-Last updated: 2026-08-04 (Asia/Manila)
+Last updated: 2026-08-05 (Asia/Manila)
 
 ## Purpose
 
@@ -25,15 +25,15 @@ This file is the persistent execution log for the EDA Platform modernization. It
 | Item | Status |
 |---|---|
 | Repository audit | Complete on 2026-08-03 |
-| Application changes | Phase 2 security/privacy implementation complete locally; cloud state unchanged |
-| Current execution phase | Phase 2 local verification complete; controlled Supabase/Vercel application and end-to-end isolation tests pending |
+| Application changes | Phase 2 security/privacy implementation and first successful cloud upload complete; final cloud gates remain |
+| Current execution phase | Phase 2 cloud checkpoint — upload persistence corrected; UI redirect and remaining isolation/retention checks pending |
 | Phase 0 preflight evidence | Substantially complete; usage totals and exact policy expressions/grants remain open. User reports no visible/configured Cron/Integrations or Storage buckets. |
-| Next proposed phase | Phase 2 cloud checkpoint — backup/export, apply migration/configuration with uploads disabled, then cross-session verification |
+| Next proposed phase | Finish Phase 2 cloud validation, restore production fail-closed settings, then request approval before Phase 3 |
 | Approval to implement Phase 0 | Approved and implemented on 2026-08-04 |
 | Approval to implement Phase 1 | Approved and implemented on 2026-08-04 |
-| Approval to implement Phase 2 locally | Approved and implemented on 2026-08-04; cloud application not yet authorized |
-| Implementation branch | `phase-2-security` |
-| Worktree at decision capture | Clean `master` at `88d1a2e` |
+| Approval to implement Phase 2 locally | Approved on 2026-08-04; controlled cloud checkpoint subsequently approved and is in progress |
+| Implementation branch | `phase-2-cloud-checkpoint` |
+| Worktree at decision capture | Active Phase 2 branch based on `master` at `fc9baf3` |
 
 ## Audit baseline
 
@@ -508,3 +508,87 @@ Append entries using this structure:
 - Decisions made: prefer current Supabase publishable/secret keys with documented legacy fallbacks; use a server-only secret client only after application authorization; deny direct browser inserts; count total cells rather than only non-empty cells; cap stored JSON at 8 MiB and correlation work at 30 numeric columns; backfill the 24-hour expiration for legacy ownerless datasets so retention applies consistently.
 - Deferred risks: the SQL migration has not been executed; live Auth/RLS/quota/Turnstile/Cron isolation is unverified; edge bot/firewall controls and monitoring remain cloud tasks; local `.env.local` and Vercel may still contain the obsolete AI credential; statistical correctness and JSONB scalability remain later phases.
 - Next approved step: review the Phase 2 branch, then explicitly authorize the controlled cloud checkpoint. Keep uploads disabled until backup/export, migration application, environment/Auth configuration, two-session isolation, abuse-limit, expiry, cleanup, monitoring, and rollback checks all pass.
+
+### 2026-08-04 — Branch workflow simplified
+
+- Goal: keep GitHub branch and commit history compact without changing implementation or review rigor.
+- Active branch: `phase-2-cloud-checkpoint`.
+- Branch policy: keep `master` plus exactly one active development branch; create the next phase branch only after the current phase is merged; delete completed local and remote phase branches after verification.
+- Commit policy: use no more than six focused working commits per phase, then squash-merge the phase so `master` receives one phase commit.
+- History policy: record commands, decisions, verification, cloud changes, and deferred risks in this worklog before the squash merge because individual working commits will not become part of `master` history.
+- Cleanup completed: deleted `phase-0-baseline`, `phase-1-framework`, `phase-2-security`, and `phase-2-retention-fix` locally and remotely after verifying merged content or preserving the one unmerged user change.
+- Preserved user change: commit `fcd6b5d` was patch-identically transferred to the active branch as `9dbc4dc` before the old branch was deleted.
+- Behavior/security impact: none; application, Supabase, Vercel, and Cloudflare state were not changed by this branch cleanup.
+- Next approved step: resume the paused Phase 2 cloud checkpoint and create the staged Turnstile widget only after confirmation.
+
+### 2026-08-05 — Phase 2 cloud checkpoint in progress
+
+- Goal: apply and validate the staged Supabase security/retention migration, then configure the Turnstile gate while uploads remain disabled.
+- Supabase migration: applied successfully after creating the temporary `phase2_backup_20260804` backup schema. All six public tables now have RLS enabled; the EDA tables retain only owner-scoped read/delete policies; upload RPCs are restricted to `service_role`; the private quota table is protected; and the hourly `purge-expired-demo-data` cron job is active.
+- Authentication: anonymous sign-in is enabled and password/email providers remain disabled. Supabase CAPTCHA is enabled with Cloudflare Turnstile; the successful save was reloaded and verified after two earlier transient HTTP 500 responses.
+- Cloudflare: created the managed Turnstile widget `eda-platform-public-demo` for `eda-platform.vercel.app`, with pre-clearance disabled. Key values were transferred directly to cloud settings and were not written to repository files or this worklog.
+- Vercel: added `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, and the server-only `SUPABASE_SERVICE_ROLE_KEY` fallback as Sensitive variables. Modern Supabase publishable/secret keys were initialized safely alongside the still-valid legacy keys, but the dashboard could not reveal or copy the new secret into Vercel; the legacy server-only key is therefore the staged fallback supported by the application.
+- Production verification: two production redeployments completed successfully on source `fc9baf3`, the second after deleting `GROQ_API_KEY`. A direct upload request returned HTTP 503 with `Cache-Control: no-store` and `Retry-After: 300`, confirming production remains fail-closed.
+- Preview testing: split `UPLOADS_ENABLED` into Production=`false` and Preview=`true`, created an isolated Preview deployment, and temporarily allowed its generated hostname on the Turnstile widget. The Preview widget initialized and issued a token; the remaining upload, two-session isolation, quota, expiry, and cleanup checks are waiting on the interactive CAPTCHA handoff.
+- Privacy cleanup: `GROQ_API_KEY` was removed from Vercel and the repository contains no Groq references. The original provider-side credential may still need revocation in the Groq account because deleting a Vercel variable does not invalidate the source credential.
+- Deferred gates: complete the Preview CAPTCHA and upload checks; remove the temporary preview Turnstile hostname and Preview upload override; confirm production still returns 503; then decide whether to enable production uploads.
+- Branch/commit state: work remains on `phase-2-cloud-checkpoint`; this documentation update is the third working commit planned for the phase and remains within the six-commit limit.
+
+### 2026-08-05 — Phase 2 first successful cloud upload and UX correction
+
+- Root cause: the first post-Turnstile upload reached `complete_upload_attempt`
+  but PostgreSQL rejected an unqualified `expires_at` reference with error
+  `42702` because the function also exposes an output parameter with that name.
+- Database correction: applied the reviewed forward-only function replacement;
+  no table, row, policy, or grant was dropped. Live verification confirmed the
+  qualified reference is present, `anon` and `authenticated` cannot execute the
+  write function, and `service_role` can execute it.
+- Cloud result: the next preview upload returned HTTP 201. Dataset ID 33 and its
+  matching analysis row were persisted with the correct owner and a 24-hour
+  expiry, and the same anonymous browser session can read the full analysis.
+- Quota explanation: the successful upload was the fifth rolling-hour attempt
+  for the test identity because four earlier failed diagnostic attempts are
+  intentionally counted to prevent repeated processing abuse. The database did
+  not impose a one-dataset limit; subsequent 429 responses were the existing
+  rolling-attempt protection.
+- UX defect: the upload page intentionally stayed in place and offered a small
+  `View your analysis` link. In addition, the navbar prefetched `/data` before
+  the write, which could briefly show the cached empty result after success.
+- UX correction: successful uploads now perform a fresh navigation to `/data`;
+  user-specific Data Analysis links do not prefetch; and the upload card states
+  the five-attempt rolling-hour and 30-second limits, including that failed
+  processing attempts count.
+- Local verification: lint passed; type-check passed; 22/22 tests passed; the
+  Next.js 16.2.11 production build passed; `git diff --check` passed with only
+  Windows line-ending notices.
+- Remaining Phase 2 gates: deploy and verify the redirect build; validate a
+  second isolated anonymous session cannot access dataset 33; validate active
+  dataset quota, expiry hiding, scheduled physical cleanup, and production's
+  upload kill switch; then remove the temporary preview Turnstile hostname and
+  Preview `UPLOADS_ENABLED=true` override before deciding whether to launch.
+
+### 2026-08-05 — Phase 2 session-isolation closeout
+
+- Redirect verification: a subsequent upload on the corrected preview returned
+  HTTP 201 and redirected the owner session to `/data` as intended.
+- Isolation verification: while dataset 35 still existed and remained visible
+  to its owner, a separate browser session could not retrieve
+  `/api/dataset-data/35`; the endpoint returned only a generic error and no
+  dataset content.
+- Unauthenticated UX finding: the separate session's `/data` query was denied
+  by the intentionally revoked `anon` table grant, proving fail-closed access,
+  but the page displayed that expected denial as `Error Loading Data`.
+- UX correction: `/data` now checks for the temporary anonymous user before
+  querying protected tables. Visitors who have not completed an upload render
+  an empty private workspace with zero datasets; authenticated anonymous owners
+  continue through the existing owner-scoped RLS query.
+- Production kill-switch recheck: `POST https://eda-platform.vercel.app/api/uploads`
+  returned HTTP 503 with `Retry-After: 300`, `Cache-Control: no-store`, and
+  `Uploads are temporarily disabled.`
+- Final local verification: lint passed; type-check passed; 22/22 tests passed;
+  the Next.js 16.2.11 production build passed; and `git diff --check` passed.
+- Commit budget: this closeout is the sixth and final working commit for Phase 2.
+  Do not add another Phase 2 commit; squash-merge after the final preview check.
+- Post-merge cloud cleanup: remove both temporary Vercel preview hostnames from
+  Turnstile and remove the Preview `UPLOADS_ENABLED=true` override. Keep
+  production uploads disabled until the user explicitly approves public launch.

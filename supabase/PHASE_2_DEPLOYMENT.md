@@ -40,6 +40,13 @@ Supabase backup.
   minute 5 of each hour;
 - removes orphaned anonymous Auth users after a 26-hour safety window.
 
+`20260805000100_phase_2_fix_upload_expiry_reference.sql`:
+
+- replaces only the bounded upload-completion function;
+- qualifies the dataset expiry column so it cannot conflict with the
+  function's `expires_at` output parameter; and
+- reasserts that only `service_role` can execute the write function.
+
 ## Apply and verify
 
 Apply with the Supabase CLI from a reviewed, linked environment. Do not apply

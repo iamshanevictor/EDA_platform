@@ -26,15 +26,25 @@ interface DatasetWithAnalysis extends Dataset {
 
 export default async function DataPage() {
   const supabase = await createClient();
-  
-  // Fetch only metadata from datasets table (without the actual data)
-  const { data: datasets, error } = await supabase
-    .from('datasets')
-    .select('id, file_name, file_size, created_at')
-    .order('created_at', { ascending: false })
-    .limit(50); // Limit to 50 most recent records for performance
+  const { data: authData } = await supabase.auth.getUser();
+  let datasets: Dataset[] = [];
+  let loadFailed = false;
 
-  if (error) {
+  // A visitor receives an anonymous identity only after completing Turnstile
+  // at the upload boundary. Until then, render an empty private workspace
+  // instead of querying tables that intentionally deny the public anon role.
+  if (authData.user?.is_anonymous) {
+    const result = await supabase
+      .from('datasets')
+      .select('id, file_name, file_size, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    datasets = result.data ?? [];
+    loadFailed = Boolean(result.error);
+  }
+
+  if (loadFailed) {
     return (
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="mb-8">
@@ -67,7 +77,7 @@ export default async function DataPage() {
 
   // Fetch analysis data for each dataset (optimized with parallel processing)
   const datasetsWithAnalysis: DatasetWithAnalysis[] = await Promise.all(
-    (datasets || []).map(async (dataset) => {
+    datasets.map(async (dataset) => {
       try {
         const analysis = await getAnalysis(dataset.id);
         return { ...dataset, analysis };

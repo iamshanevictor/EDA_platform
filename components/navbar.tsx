@@ -33,7 +33,7 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch={true}
+                  prefetch={item.href === '/data' ? false : true}
                   className={`text-sm font-medium transition-colors hover:text-foreground/80 ${
                     pathname === item.href
                       ? 'text-foreground'
@@ -57,9 +57,9 @@ export function Navbar() {
           <div className="flex flex-col space-y-2 py-4">
             {navItems.map((item) => (
               <Link
-                key={item.href}
-                href={item.href}
-                prefetch={true}
+                  key={item.href}
+                  href={item.href}
+                  prefetch={item.href === '/data' ? false : true}
                 className={`text-sm font-medium transition-colors hover:text-foreground/80 px-2 py-1 rounded-md ${
                   pathname === item.href
                     ? 'text-foreground bg-foreground/10'
